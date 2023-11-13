@@ -1,6 +1,15 @@
 #include <iostream>
+#include "IR/IR.h"
 
-int main() {
-    std::cout << "Hello, world!" << std::endl;
-    return 0;
+//------------------------ MAIN --------------------------------------//
+int main(int argc, char const *argv[])
+{
+	std::string program = R"(
+		42
+	)";
+
+	IR vm;
+	vm.exec(program);
+
+	return 0;
 }

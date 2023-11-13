@@ -1,11 +1,11 @@
 #include <cstddef>
-#include <llvm-15/llvm/IR/BasicBlock.h>
-#include <llvm-15/llvm/IR/DerivedTypes.h>
-#include <llvm-15/llvm/IR/IRBuilder.h>
-#include <llvm-15/llvm/IR/Intrinsics.h>
-#include <llvm-15/llvm/IR/LLVMContext.h>
-#include <llvm-15/llvm/IR/Module.h>
-#include <llvm-15/llvm/IR/Type.h>
+#include <llvm/IR/BasicBlock.h>
+#include <llvm/IR/DerivedTypes.h>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/Intrinsics.h>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IR/Type.h>
 #include <memory>
 #include <vector>
 
@@ -24,7 +24,7 @@ int main()
 	auto TheBuilder = std::make_unique<IRBuilder<>>(*TheContext);
 
 	// Create the function prototype
-	Type *Tys[] = {Type::getInt8PtrTy(*TheContext), Type::getInt32Ty(*TheContext)};
+	Type *Tys[] = {Type::getInt8Ty(*TheContext), Type::getInt32Ty(*TheContext)};
 
 	// Create the function type
 	std::vector<Type *> Doubles(2, Type::getDoubleTy(*TheContext));
