@@ -1,6 +1,5 @@
 #python
 .env
-
 # vscode
 !.vscode/launch.json
 !.vscode/tasks.json
@@ -12,6 +11,7 @@
 *.d
 
 # Compiled Object files
+.cache
 *.slo
 *.lo
 *.o
