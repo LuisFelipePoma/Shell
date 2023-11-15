@@ -1,3 +1,10 @@
+#python
+.env
+
+# vscode
+!.vscode/launch.json
+!.vscode/tasks.json
+
 # antlr
 .antlr
 
@@ -28,6 +35,7 @@
 *.la
 *.a
 *.lib
+*.ll
 
 # Executables
 *.exe
