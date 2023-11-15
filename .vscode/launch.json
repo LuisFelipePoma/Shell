@@ -1,14 +1,14 @@
 {
-    "version": "0.2.0",
-    "configurations": [	
-        {
-            "name": "Debug",
-            "type": "cppdbg",
-            "request": "launch",
-			"program": "${fileDirname}/a.out",
-            "args": [],
-            "cwd": "${workspaceFolder}",
-            "preLaunchTask": "build"
-        }
-    ]
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "Debug Project",
+			"type": "cppdbg",
+			"request": "launch",
+			"program": "${workspaceRoot}/src/build/prog",
+			"cwd": "${workspaceRoot}/src",
+			// "args": [">", "output.txt"],
+			"preLaunchTask": "build"
+		}
+	]
 }
