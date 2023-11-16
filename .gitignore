@@ -5,6 +5,11 @@
 !.vscode/launch.json
 !.vscode/tasks.json
 
+# files
+.clangd
+setup.sh
+.vscode
+
 # antlr
 .antlr
 
