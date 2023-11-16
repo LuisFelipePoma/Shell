@@ -106,7 +106,7 @@
 	```bash
 	cmake --build build -j4
 	```
-	> For install like in the libraries of the system
+	> Install in the libraries of the system
 	```bash
 	cmake --install build --prefix /usr/local/include
 	```
