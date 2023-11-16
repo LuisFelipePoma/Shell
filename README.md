@@ -6,6 +6,18 @@
 - `.clangd` : Configuration file for clangd server language
 - `setup.sh` : Script for create `PATHS` for llvm and antlr and activate `env`
 - `requirements.txt` : File for install `antlr4` with pip
+- For debugger/runner of vscode works, add this variables to your `.zshrc`, `.bashrc`, `etc`.
+	```bash
+	export MYDEPENDENCIES=$HOME/Apps
+	export LLVMDEPENDENCIES=$HOME/llvm/llvm-project/build
+
+	export ANTLR4HOME=$MYDEPENDENCIES/antlr4-cpp/run
+	export ANTLR4I=$ANTLR4HOME/usr/local/include/antlr4-runtime
+	export ANTLR4L=$ANTLR4HOME/usr/local/lib/
+
+	export LLVM17I=$LLVMDEPENDENCIES/include
+	export LLVM17L=$LLVMDEPENDENCIES/lib
+	```
 
 ## Installation
 

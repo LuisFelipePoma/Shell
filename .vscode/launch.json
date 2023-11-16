@@ -5,10 +5,21 @@
 			"name": "Debug Project",
 			"type": "cppdbg",
 			"request": "launch",
-			"program": "${workspaceRoot}/src/build/prog",
+			"program": "${workspaceRoot}/src/build/debug/prog",
 			"cwd": "${workspaceRoot}/src",
 			// "args": [">", "output.txt"],
-			"preLaunchTask": "build"
+			"preLaunchTask": "build",
+			"externalConsole": false
+		},
+		{
+			"name": "Run Project",
+			"type": "cppdbg",
+			"request": "launch",
+			"program": "${workspaceRoot}/src/build/release/prog",
+			"cwd": "${workspaceRoot}/src",
+			// "args": [">", "output.txt"],
+			"preLaunchTask": "run",
+			"externalConsole": false,
 		}
 	]
 }
