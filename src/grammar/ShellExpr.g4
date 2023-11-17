@@ -17,15 +17,59 @@ command
 	| compound_command 
     ;
 
-simple_command 
-    : cmd_word
-    | cmd_name
-    ;
-
 compound_command
-    : for_clause
+    : brace_group
+    | for_clause
 	| if_clause
 	| while_clause
+    ;
+
+simple_command
+    : cmd_prefix cmd_word cmd_suffix
+	| cmd_prefix cmd_word
+	| cmd_prefix
+	| cmd_name cmd_suffix
+	| cmd_name
+    ;
+    
+cmd_prefix       
+    : (io_redirect | assignment_word) (cmd_prefix)?
+    ;
+
+
+cmd_suffix       
+    : (io_redirect | WORD) (cmd_suffix)?
+    ;
+
+
+io_redirect      
+    :           io_file
+    | IO_NUMBER io_file
+    |           io_here
+    | IO_NUMBER io_here
+    ;
+
+io_file
+    : '<'       filename
+	| LESSAND   filename
+	| '>'       filename
+	| GREATAND  filename
+	| DGREAT    filename
+	| LESSGREAT filename
+	| CLOBBER   filename
+    ;
+
+filename 
+    : WORD
+    ;
+
+io_here          
+    : DLESS here_end
+    | DLESSDASH here_end
+    ;
+
+here_end         
+    : WORD
     ;
     
 compound_list
@@ -39,6 +83,10 @@ for_clause
 
 wordlist
     : WORD+
+    ;
+
+brace_group
+    : LBRACE compound_list RBRACE
     ;
 
 do_group
@@ -77,19 +125,8 @@ term
     : and_or (separator and_or)*
     ;
 
-/*expr
-    : expr op = ('==' | '!=' | '<' | '>' | '<=' | '>=') expr
-    | expr AND expr					
-    | expr OR expr					
-    | TRUE							
-    | FALSE							
-    | ID				
-    | NUMBER			
-    | '(' expr ')'					
-    ;*/
-
 cmd_name 
-    : ID;
+    : WORD;
 
 cmd_word
     : WORD
@@ -104,11 +141,14 @@ separator
     : separator_op
     ;
 
+assignment_word
+    : WORD '='
+    ;
+
 WHILE: 'while';
 FOR: 'for';
 IF: 'if';
 ELSE: 'else';
-
 AND_IF: '&&';
 OR_IF: '||';
 IN: 'in';
@@ -116,27 +156,29 @@ DO: 'do';
 DONE: 'done';
 TRUE: 'true';
 FALSE: 'false';
+LBRACE: '{';
+RBRACE: '}';
+DLESS: '<<';
+DGREAT: '>>';
+LESSAND: '<&';
+GREATAND: '>&';
+LESSGREAT: '<>';
+DLESSDASH: '<<-';
+CLOBBER: '>|';
 
-NUMBER: '-'? ( '.' DIGIT+ | DIGIT+ ( '.' DIGIT* )? );
 WORD: (LETTER | DIGIT)+ (LETTER | DIGIT)*;
-ID: LETTER ( LETTER | DIGIT)*;
+IO_NUMBER: DIGIT+;
+ID: LETTER+ (LETTER | DIGIT)*;
+NUMBER: '-'? ( '.' DIGIT+ | DIGIT+ ( '.' DIGIT* )? );
 
 fragment DIGIT
    : [0-9]
    ;
 
-STRING: '"' ( '\\"' | . )*? '"';
-
 fragment LETTER
-   : [a-zA-Z\u0080-\u00FF_]
+   : [a-zA-Z$_]
    ;
-   
-COMMENT
-   : '#' ~[\r\n]* -> skip
-   ;
-   
-LIST: '[' (STRING (',' STRING)*)? ']';
 
-WS
-   : [ \t\n\r]+ -> skip
-   ;
+STRING: '"' ( '\\"' | . )*? '"';
+LIST: '[' (STRING (',' STRING)*)? ']';
+WS: [ \t\n\r]+ -> skip;
