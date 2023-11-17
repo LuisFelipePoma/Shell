@@ -46,9 +46,8 @@ do_group
     ;
 
 and_or
-    : pipeline (AND_IF | OR_IF) pipeline*
+    : pipeline (AND_IF pipeline| OR_IF pipeline)*
     ;
-
 
 pipeline
     : pipe_sequence
@@ -62,11 +61,13 @@ pipe_sequence
 
 if_clause 
     : IF compound_list DO command* else_part DONE
-	| IF compound_list DO command* DONE;
+	| IF compound_list DO command*           DONE
+    ;
 
 else_part
-    : ELSE IF compound_list DO else_part
-    | ELSE compound_list;
+    : ELSE IF compound_list DO command* else_part
+    | ELSE compound_list
+    ;
 
 while_clause     
     : WHILE compound_list do_group
@@ -88,7 +89,7 @@ term
     ;*/
 
 cmd_name 
-    : WORD;
+    : ID;
 
 cmd_word
     : WORD
@@ -116,10 +117,9 @@ DONE: 'done';
 TRUE: 'true';
 FALSE: 'false';
 
-
-//NAME: LETTER ( LETTER | DIGIT)*;
 NUMBER: '-'? ( '.' DIGIT+ | DIGIT+ ( '.' DIGIT* )? );
-WORD: LETTER ( LETTER | DIGIT)*;
+WORD: (LETTER | DIGIT)+ (LETTER | DIGIT)*;
+ID: LETTER ( LETTER | DIGIT)*;
 
 fragment DIGIT
    : [0-9]
@@ -134,6 +134,7 @@ fragment LETTER
 COMMENT
    : '#' ~[\r\n]* -> skip
    ;
+   
 LIST: '[' (STRING (',' STRING)*)? ']';
 
 WS
