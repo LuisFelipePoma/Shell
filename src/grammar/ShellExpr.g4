@@ -13,8 +13,8 @@ list
     ;
 
 command
-    : simple_command
-	| compound_command 
+    : simple_command   # simpleStmt
+	| compound_command # compoundStmt
     ;
 
 compound_command
@@ -25,11 +25,11 @@ compound_command
     ;
 
 simple_command
-    : cmd_prefix cmd_word cmd_suffix
-	| cmd_prefix cmd_word
-	| cmd_prefix
-	| cmd_name cmd_suffix
-	| cmd_name
+    : cmd_prefix cmd_word cmd_suffix	# cmdPrefWordSuff
+	| cmd_prefix cmd_word				# cmdPrefWord
+	| cmd_prefix						# cmdPref
+	| cmd_name cmd_suffix				# cmdSuff
+	| cmd_name							# cmd
     ;
     
 cmd_prefix       
@@ -38,7 +38,7 @@ cmd_prefix
 
 
 cmd_suffix       
-    : (io_redirect | WORD) (cmd_suffix)?
+    : (io_redirect | WORD) (cmd_suffix)? # cmdSuffBody
     ;
 
 
@@ -176,7 +176,7 @@ fragment DIGIT
    ;
 
 fragment LETTER
-   : [a-zA-Z$_]
+   : [a-zA-Z$_.]
    ;
 
 STRING: '"' ( '\\"' | . )*? '"';

@@ -1,7 +1,6 @@
 #!/usr/bin/sh
-
 setup(){
-    local venvpath="$HOME/Codes/Compilers/env"
+    local venvpath="$HOME/Codes/Shell/.env"
 
     # Verifica si el directorio del entorno virtual existe
     
@@ -22,5 +21,4 @@ setup(){
 	export LLVM17I=$LLVMDEPENDENCIES/include
 	export LLVM17L=$LLVMDEPENDENCIES/lib
 }
-
 setup

@@ -7,7 +7,7 @@
 			"request": "launch",
 			"program": "${workspaceRoot}/src/build/debug/prog",
 			"cwd": "${workspaceRoot}/src",
-			// "args": [">", "output.txt"],
+			"args": ["${workspaceRoot}/src/test.txt"],
 			"preLaunchTask": "build",
 			"externalConsole": false
 		},

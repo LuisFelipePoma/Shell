@@ -1,5 +1,5 @@
 CompileFlags:
   Add:
     - "-lLLVM-17"
-    - "-I/home/felipe/Apps/antlr4-cpp/run/usr/local/include/antlr4-runtime"
+    - "-I/usr/local/include/antlr4-runtime"
     - "-lantlr4-runtime"

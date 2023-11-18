@@ -9,6 +9,8 @@
 .clangd
 setup.sh
 .vscode
+test
+libs
 
 # antlr
 .antlr
