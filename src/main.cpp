@@ -14,7 +14,7 @@
 int main(int argc, char **argv)
 {
 	std::string line;
-	std::string program;
+	std::string program = "";
 	const char *username = getenv("USER"); // Get the username
 	if (username == nullptr)
 	{ // If the USER environment variable is not set, use a default value
@@ -30,7 +30,7 @@ int main(int argc, char **argv)
 			break;
 		}
 
-		if (line.empty() || line.find(';') > 100)
+		if (line.empty())
 		{
 			continue;
 		}
