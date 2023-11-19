@@ -1,5 +1,6 @@
 #python
 .env
+env/
 # vscode
 .vscode
 !.vscode/launch.json

@@ -4,6 +4,11 @@ start
     : command EOF
     ;
 
+complete_commands
+    : complete_command (complete_command)*
+    |                                
+    ;
+
 complete_command
     : list separator?
     ;
@@ -166,7 +171,7 @@ LESSGREAT: '<>';
 DLESSDASH: '<<-';
 CLOBBER: '>|';
 
-WORD: (LETTER | DIGIT)+ (LETTER | DIGIT)*;
+WORD: (ALPHANUMERIC_CHAR | DIGIT)+ (ALPHANUMERIC_CHAR | DIGIT)*;
 IO_NUMBER: DIGIT+;
 ID: LETTER+ (LETTER | DIGIT)*;
 NUMBER: '-'? ( '.' DIGIT+ | DIGIT+ ( '.' DIGIT* )? );
@@ -176,8 +181,12 @@ fragment DIGIT
    ;
 
 fragment LETTER
-   : [a-zA-Z$_.]
+   : [a-zA-Z.]
    ;
+
+fragment ALPHANUMERIC_CHAR
+    : [a-zA-Z$_=.]
+    ;
 
 STRING: '"' ( '\\"' | . )*? '"';
 LIST: '[' (STRING (',' STRING)*)? ']';
