@@ -11,7 +11,8 @@
 // Utils
 #include "../utils/ls.h"
 #include "../utils/cd.h"
-
+#include "../utils/export.h"
+#include "../utils/echo.h"
 // start : comand EOF;
 std::any shellVisitor::visitStart(ShellExprParser::StartContext *ctx)
 {
@@ -72,6 +73,17 @@ std::any shellVisitor::visitCmdSuff(ShellExprParser::CmdSuffContext *ctx)
 	if (command == "cd")
 	{
 		changeDirectory(std::any_cast<std::string>(suffix));
+	}
+	else if(command == "export"){
+		std::string assignation = ctx->cmd_suffix()->getText();
+		std::string name = assignation.substr(0, assignation.find("="));
+		std::string value = assignation.substr(assignation.find("=") + 1, assignation.length());
+		export_command(name.c_str(), value.c_str());
+	}
+	else if(command == "echo"){
+		std::string variable = ctx->cmd_suffix()->getText();
+		std::string name = variable.substr(variable.find("$") + 1, variable.length());
+		echo_command(name.c_str());
 	}
 	return std::any();
 }
