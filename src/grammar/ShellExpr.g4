@@ -1,154 +1,65 @@
 grammar ShellExpr;
 
-start
-    : command EOF
-    ;
+start: command EOF;
 
-complete_commands
-    : complete_command (complete_command)*
-    |                                
-    ;
+list: and_or (separator and_or)*;
 
-complete_command
-    : list separator?
-    ;
+command:
+	simple_command		# simpleStmt
+	| compound_command	# compoundStmt;
 
-list
-    : and_or (separator_op and_or)*
-    ;
-
-command
-    : simple_command   # simpleStmt
-	| compound_command # compoundStmt
-    ;
-
-compound_command
-    : brace_group
-    | for_clause
+compound_command:
+	for_clause
 	| if_clause
 	| while_clause
-    ;
+	| brace_group;
 
-simple_command
-    : cmd_prefix cmd_word cmd_suffix	# cmdPrefWordSuff
-	| cmd_prefix cmd_word				# cmdPrefWord
-	| cmd_prefix						# cmdPref
-	| cmd_name cmd_suffix				# cmdSuff
+simple_command:
+	cmd_name args? io_redirect filename	# cmdIO
+	| cmd_name args						# cmdArgs
 	| cmd_name							# cmd
-    ;
-    
-cmd_prefix       
-    : (io_redirect | assignment_word) (cmd_prefix)?
-    ;
+	| 'export' ID '=' (ID | WORD)		# export
+	| 'let' ID '=' (ID | WORD | LIST)	# assing;
 
+args: (ID | WORD)+;
+filename: WORD+;
 
-cmd_suffix       
-    : (io_redirect | WORD) (cmd_suffix)? # cmdSuffBody
-    ;
+io_redirect:
+	'<'
+	| LESSAND
+	| '>'
+	| GREATAND
+	| DGREAT
+	| LESSGREAT
+	| CLOBBER;
 
+compound_list: and_or (separator and_or)* separator?;
 
-io_redirect      
-    :           io_file
-    | IO_NUMBER io_file
-    |           io_here
-    | IO_NUMBER io_here
-    ;
+for_clause:
+	FOR (ID | WORD) IN (ID | WORD)+ do_group
+	| FOR WORD do_group;
 
-io_file
-    : '<'       filename
-	| LESSAND   filename
-	| '>'       filename
-	| GREATAND  filename
-	| DGREAT    filename
-	| LESSGREAT filename
-	| CLOBBER   filename
-    ;
+brace_group: LBRACE compound_list RBRACE;
 
-filename 
-    : WORD
-    ;
+do_group: DO compound_list DONE;
 
-io_here          
-    : DLESS here_end
-    | DLESSDASH here_end
-    ;
+and_or: pipeline (AND_IF pipeline | OR_IF pipeline)*;
 
-here_end         
-    : WORD
-    ;
-    
-compound_list
-    : term separator?
-    ;
+pipeline: command ('|' command)*;
 
-for_clause
-    : FOR WORD do_group
-	| FOR WORD IN wordlist do_group 
-    ;
+if_clause:
+	IF compound_list DO compound_list else_part DONE
+	| IF compound_list do_group;
 
-wordlist
-    : WORD+
-    ;
+else_part:
+	ELSE IF compound_list DO command* else_part
+	| ELSE compound_list;
 
-brace_group
-    : LBRACE compound_list RBRACE
-    ;
+while_clause: WHILE compound_list do_group;
 
-do_group
-    : DO compound_list DONE
-    ;
+cmd_name: (WORD | ID);
 
-and_or
-    : pipeline (AND_IF pipeline| OR_IF pipeline)*
-    ;
-
-pipeline
-    : pipe_sequence
-    /*| Bang pipe_sequence*/
-    ;
-
-pipe_sequence
-    : command ('|' command)*
-    ;
-
-
-if_clause 
-    : IF compound_list DO command* else_part DONE
-	| IF compound_list DO command*           DONE
-    ;
-
-else_part
-    : ELSE IF compound_list DO command* else_part
-    | ELSE compound_list
-    ;
-
-while_clause     
-    : WHILE compound_list do_group
-    ;
-
-term
-    : and_or (separator and_or)*
-    ;
-
-cmd_name 
-    : WORD;
-
-cmd_word
-    : WORD
-    ;
-
-separator_op
-    : '&'
-    | ';'
-    ;    
-
-separator 
-    : separator_op
-    ;
-
-assignment_word
-    : WORD '='
-    ;
+separator: '&' | ';';
 
 WHILE: 'while';
 FOR: 'for';
@@ -163,6 +74,7 @@ TRUE: 'true';
 FALSE: 'false';
 LBRACE: '{';
 RBRACE: '}';
+
 DLESS: '<<';
 DGREAT: '>>';
 LESSAND: '<&';
@@ -171,23 +83,16 @@ LESSGREAT: '<>';
 DLESSDASH: '<<-';
 CLOBBER: '>|';
 
-WORD: (ALPHANUMERIC_CHAR | DIGIT)+ (ALPHANUMERIC_CHAR | DIGIT)*;
-IO_NUMBER: DIGIT+;
-ID: LETTER+ (LETTER | DIGIT)*;
-NUMBER: '-'? ( '.' DIGIT+ | DIGIT+ ( '.' DIGIT* )? );
+ID: LETTER ( LETTER | DIGIT)*;
+WORD: (ALPHANUMERIC_CHAR | DIGIT)+;
+NUMBER: '-'? ( '.' DIGIT+ | DIGIT+ ( '.' DIGIT*)?);
 
-fragment DIGIT
-   : [0-9]
-   ;
+fragment DIGIT: [0-9];
 
-fragment LETTER
-   : [a-zA-Z.]
-   ;
+fragment LETTER: [a-zA-Z];
 
-fragment ALPHANUMERIC_CHAR
-    : [a-zA-Z$_=.]
-    ;
+fragment ALPHANUMERIC_CHAR: [a-zA-Z$_./"];
 
-STRING: '"' ( '\\"' | . )*? '"';
-LIST: '[' (STRING (',' STRING)*)? ']';
+STRING: '"' ( '\\"' | .)*? '"';
+LIST: '[' (WORD (',' WORD)*)? ']';
 WS: [ \t\n\r]+ -> skip;
