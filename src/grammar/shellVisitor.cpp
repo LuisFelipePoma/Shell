@@ -76,9 +76,7 @@ std::any shellVisitor::visitCmd(ShellExprParser::CmdContext *ctx)
 	// std::cout << "cmd_name\n";
 	std::string command = ctx->cmd_name()->ID()->getText();
 
-	// Execute the command
 	handleExecutionCmd(command);
-
 	return std::any();
 }
 
@@ -128,8 +126,23 @@ std::any shellVisitor::visitAssing(ShellExprParser::AssingContext *ctx)
 std::any shellVisitor::visitExport(ShellExprParser::ExportContext *ctx)
 {
 	std::string id = ctx->ID()->getText();
-	auto value = std::any_cast<std::string>(visit(ctx->expr()));
-	export_command(id.c_str(), value.c_str());
+
+	std::any valueAny = visit(ctx->expr());
+	if (valueAny.type() == typeid(std::vector<std::any>))
+	{
+		// Handle vector case
+		std::cout << "Cannot export a vector\n";
+	}
+	else if (valueAny.type() == typeid(std::string))
+	{
+		std::string value = std::any_cast<std::string>(valueAny);
+		export_command(id.c_str(), value.c_str());
+	}
+	else
+	{
+		// Handle other types or throw an error
+		std::cout << "Unsupported type for export\n";
+	}
 
 	return std::any();
 }
@@ -138,13 +151,13 @@ std::any shellVisitor::visitExport(ShellExprParser::ExportContext *ctx)
 std::any shellVisitor::visitDeclaration(ShellExprParser::DeclarationContext *ctx)
 {
 	std::string id = ctx->ID()->getText();
-	auto value = std::any_cast<std::string>(visit(ctx->expr()));
+	auto value = visit(ctx->expr());
 	if (memory.find(id) != memory.end())
 	{
 		std::cout << "Variable already exists..." << std::endl;
 	}
 	else
-		memory.insert(std::pair<std::string, std::string>(id, value));
+		memory.insert(std::pair<std::string, std::any>(id, value));
 	return std::any();
 }
 
@@ -222,10 +235,17 @@ std::any shellVisitor::visitListStmt(ShellExprParser::ListStmtContext *ctx)
 	std::string list = ctx->LIST()->getText();
 	std::vector<std::any> arr;
 	// parse "list" to "arr"
-	std::istringstream iss(list);
-	for (std::string s; iss >> s;)
+	// Extract the list part of the string
+	std::size_t start = list.find('[') + 1;
+	std::size_t end = list.find(']');
+	std::string listPart = list.substr(start, end - start);
+
+	// Split the list part by commas
+	std::istringstream iss(listPart);
+	for (std::string s; std::getline(iss, s, ',');)
 	{
-		arr.push_back(s);
+		// Convert each element to int and store it as std::any
+		arr.push_back(std::stoi(s));
 	}
 
 	return std::any(arr);
