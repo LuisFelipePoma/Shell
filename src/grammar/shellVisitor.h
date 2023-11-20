@@ -47,6 +47,7 @@ public:
 	virtual std::any visitAssing(ShellExprParser::AssingContext *ctx) override;
 	virtual std::any visitExport(ShellExprParser::ExportContext *ctx) override;
 	virtual std::any visitDeclaration(ShellExprParser::DeclarationContext *ctx) override;
+	virtual std::any visitShow(ShellExprParser::ShowContext *ctx) override;
 
 	// <------------------- expr -------------------------->
 	virtual std::any visitMulDivOpe(ShellExprParser::MulDivOpeContext *ctx) override;
@@ -56,10 +57,10 @@ public:
 	virtual std::any visitListStmt(ShellExprParser::ListStmtContext *ctx) override;
 
 	// <------------------- compound_list ----------------->
-	// TODO
+	virtual std::any visitCompoundListBody(ShellExprParser::CompoundListBodyContext *ctx) override;
 
 	// <------------------- for_clause -------------------->
-	// TODO
+	virtual std::any visitForBody(ShellExprParser::ForBodyContext *ctx) override;
 
 	// <------------------- brace_group ------------------->
 	// TODO
@@ -68,12 +69,16 @@ public:
 	// TODO
 
 	// <------------------- and_or ------------------------>
+	
 	// TODO
 
 	// <------------------- pipeline ---------------------->
 	// TODO
 
 	// <------------------- if_clause --------------------->
+	virtual std::any visitIfElseBody(ShellExprParser::IfElseBodyContext *ctx){
+		g
+	}
 	// TODO
 
 	// <------------------- else_part --------------------->

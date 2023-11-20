@@ -161,6 +161,21 @@ std::any shellVisitor::visitDeclaration(ShellExprParser::DeclarationContext *ctx
 	return std::any();
 }
 
+// operation : 	| 'show' ID 	                	# show
+std::any shellVisitor::visitShow(ShellExprParser::ShowContext *ctx)
+{
+	std::string id = ctx->ID()->getText();
+	if (memory.find(id) != memory.end())
+	{
+		std::cout << std::any_cast<std::string>(memory.at(id)) << std::endl;
+	}
+	else
+	{
+		std::cout << "Variable not found..." << std::endl;
+	}
+
+	return std::any();
+}
 // _____________________________________________________________________________
 // |								expr										|
 // -----------------------------------------------------------------------------
@@ -245,7 +260,7 @@ std::any shellVisitor::visitListStmt(ShellExprParser::ListStmtContext *ctx)
 	for (std::string s; std::getline(iss, s, ',');)
 	{
 		// Convert each element to int and store it as std::any
-		arr.push_back(std::stoi(s));
+		arr.push_back(s);
 	}
 
 	return std::any(arr);
@@ -256,14 +271,68 @@ std::any shellVisitor::visitListStmt(ShellExprParser::ListStmtContext *ctx)
 // -----------------------------------------------------------------------------
 
 // compound_list: (command|and_or) (separator (command|and_or))* separator? # compoundListBody
-// TODO
+std::any shellVisitor::visitCompoundListBody(ShellExprParser::CompoundListBodyContext *ctx)
+{
+	// std::cout << "visiting CompoundList\n";
+	for (size_t i = 0; i < ctx->children.size(); ++i)
+	{
+		// Children diferent from
+		visit(ctx->children[i]);
+	}
+	return std::any();
+}
 
 // _____________________________________________________________________________
 // |							  for_clause									|
 // -----------------------------------------------------------------------------
 
-// for_clause: FOR ID IN ID+ do_group          # forBody
-// TODO
+// for_clause: FOR ID IN expr do_group          # forBody
+std::any shellVisitor::visitForBody(ShellExprParser::ForBodyContext *ctx)
+{
+	auto iter_element = ctx->ID()->getText();
+	auto iterable = visit(ctx->expr());
+
+	if (iterable.type() == typeid(std::vector<std::any>))
+	{
+		auto newIterable = std::any_cast<std::vector<std::any>>(iterable);
+		// Body For
+		for (auto i : newIterable)
+		{
+			if (i.type() == typeid(std::string))
+			{
+				// std::cout << std::to_string(i) << std::endl;
+				memory.insert(std::pair<std::string, std::any>(iter_element, i));
+				visit(ctx->do_group());
+				memory.erase(iter_element);
+			}
+			else
+			{
+				// Handle other types or throw an error
+				std::cout << "Unsupported type in iterable\n";
+				return std::any();
+			}
+		}
+	}
+	else if (iterable.type() == typeid(std::string))
+	{
+		auto newIterable = std::stoi(std::any_cast<std::string>(iterable));
+		// Body For
+		for (size_t i = 0; i < newIterable; ++i)
+		{
+			memory.insert(std::pair<std::string, std::any>(iter_element, std::to_string(i)));
+			visit(ctx->do_group());
+			memory.erase(iter_element);
+		}
+	}
+	else
+	{
+		// Handle other types or throw an error
+		std::cout << "Unsupported type for 'for'\n";
+		return std::any();
+	}
+
+	return std::any();
+}
 
 // _____________________________________________________________________________
 // |							  brace_group									|
