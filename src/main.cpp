@@ -13,6 +13,7 @@
 
 int main(int argc, char **argv)
 {
+	shellVisitor visitor;
 	std::string line;
 	std::string program = "";
 	const char *username = getenv("USER"); // Get the username
@@ -40,7 +41,7 @@ int main(int argc, char **argv)
 		antlr4::CommonTokenStream tokens(&lexer);
 		ShellExprParser parser(&tokens);
 		auto tree = parser.start();
-		shellVisitor visitor;
 		visitor.visitStart(tree);
+		visitor.test();
 	}
 }

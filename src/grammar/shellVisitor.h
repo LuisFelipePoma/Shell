@@ -44,11 +44,16 @@ public:
 	virtual std::any visitArgsBody(ShellExprParser::ArgsBodyContext *ctx) override;
 
 	// <------------------- operation --------------------->
-	// TODO
+	virtual std::any visitAssing(ShellExprParser::AssingContext *ctx) override;
+	virtual std::any visitExport(ShellExprParser::ExportContext *ctx) override;
+	virtual std::any visitDeclaration(ShellExprParser::DeclarationContext *ctx) override;
 
 	// <------------------- expr -------------------------->
-	// TODO
-
+	virtual std::any visitMulDivOpe(ShellExprParser::MulDivOpeContext *ctx) override;
+	virtual std::any visitSumMinOpe(ShellExprParser::SumMinOpeContext *ctx) override;
+	virtual std::any visitCompOpe(ShellExprParser::CompOpeContext *ctx) override;
+	virtual std::any visitIdStmt(ShellExprParser::IdStmtContext *ctx) override;
+	virtual std::any visitListStmt(ShellExprParser::ListStmtContext *ctx) override;
 	// <------------------- compound_list ----------------->
 	// TODO
 

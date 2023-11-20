@@ -25,15 +25,15 @@ args: ID+								# argsBody
 	;
 
 operation:
-    ID '=' expr                         # assign
+    ID '=' expr                         # assing
     | 'export' ID '=' expr		        # export
 	| 'let' ID '=' expr	                # declaration
 	;
 	
 expr:
-    expr ('*'|'/') expr                     # mulDivOpe
-    | expr ('+'|'-') expr                   # sumMinOpe
-    | expr ('<'|'>'|'>='|'<='| '==') expr   # compOpe
+    expr opt=('*'|'/') expr                     # mulDivOpe
+    | expr opt=('+'|'-') expr                   # sumMinOpe
+    | expr opt=('<'|'>'|'>='|'<='| '==') expr   # compOpe
     | ID                                    # idStmt
     | LIST                                  # listStmt
     ;
@@ -106,6 +106,16 @@ GREATAND: '>&';
 LESSGREAT: '<>';
 DLESSDASH: '<<-';
 CLOBBER: '>|';
+
+MUL: '*';
+DIV: '/';
+PLUS: '+';
+MINUS: '-';
+LESS: '<';
+GREAT: '>';
+GREAT_EQ: '>=';
+LESS_EQ: '<=';
+EQUALS: '==';
 
 
 ID: (ALPHANUMERIC_CHAR | DIGIT)+;
