@@ -1,12 +1,13 @@
 grammar ShellExpr;
 
-start: command EOF;
-
-list: and_or (separator and_or)*;
+start: command EOF
+    ;
 
 command:
 	simple_command		# simpleStmt
-	| compound_command	# compoundStmt;
+	| compound_command	# compoundStmt
+	| pipeline          # pipelineStmt
+	;
 
 compound_command:
 	for_clause
@@ -15,14 +16,65 @@ compound_command:
 	| brace_group;
 
 simple_command:
-	cmd_name args? io_redirect filename	# cmdIO
-	| cmd_name args						# cmdArgs
+	  cmd_name args						# cmdArgs
 	| cmd_name							# cmd
-	| 'export' ID '=' (ID | WORD)		# export
-	| 'let' ID '=' (ID | WORD | LIST)	# assing;
+	| operation                         # operationStmt
+    ;
 
-args: (ID | WORD)+;
-filename: WORD+;
+args: ID+								# argsBody
+	;
+
+operation:
+    ID '=' expr                         # assign
+    | 'export' ID '=' expr		        # export
+	| 'let' ID '=' expr	                # declaration
+	;
+	
+expr:
+    expr ('*'|'/') expr                     # mulDivOpe
+    | expr ('+'|'-') expr                   # sumMinOpe
+    | expr ('<'|'>'|'>='|'<='| '==') expr   # compOpe
+    | ID                                    # idStmt
+    | LIST                                  # listStmt
+    ;
+
+compound_list: 
+    (command|and_or) (separator (command|and_or))* separator? # compoundListBody
+;
+
+for_clause: FOR ID IN ID+ do_group          # forBody
+	;
+
+brace_group: LBRACE compound_list RBRACE    # braceBody
+    ;
+
+do_group: DO compound_list DONE             # doBody
+    ;            
+
+and_or: pipeline (AND_IF pipeline | OR_IF pipeline)* #andOrBody
+    ;
+
+pipeline: simple_command (('|'| io_redirect) simple_command)* #pipelineBody
+    ;
+
+if_clause:
+	IF expr DO compound_list else_part DONE         #ifElseBody
+	| IF expr do_group                              #ifBody
+	;
+
+else_part:
+	ELSE IF expr DO command* else_part              #elseIfBody
+	| ELSE compound_list                            #elseBody
+	;           
+
+while_clause: WHILE expr do_group                   #whileBody
+;
+
+cmd_name: ID;
+
+separator: '&' | ';';
+
+
 
 io_redirect:
 	'<'
@@ -32,34 +84,6 @@ io_redirect:
 	| DGREAT
 	| LESSGREAT
 	| CLOBBER;
-
-compound_list: and_or (separator and_or)* separator?;
-
-for_clause:
-	FOR (ID | WORD) IN (ID | WORD)+ do_group
-	| FOR WORD do_group;
-
-brace_group: LBRACE compound_list RBRACE;
-
-do_group: DO compound_list DONE;
-
-and_or: pipeline (AND_IF pipeline | OR_IF pipeline)*;
-
-pipeline: command ('|' command)*;
-
-if_clause:
-	IF compound_list DO compound_list else_part DONE
-	| IF compound_list do_group;
-
-else_part:
-	ELSE IF compound_list DO command* else_part
-	| ELSE compound_list;
-
-while_clause: WHILE compound_list do_group;
-
-cmd_name: (WORD | ID);
-
-separator: '&' | ';';
 
 WHILE: 'while';
 FOR: 'for';
@@ -83,16 +107,15 @@ LESSGREAT: '<>';
 DLESSDASH: '<<-';
 CLOBBER: '>|';
 
-ID: LETTER ( LETTER | DIGIT)*;
-WORD: (ALPHANUMERIC_CHAR | DIGIT)+;
+
+ID: (ALPHANUMERIC_CHAR | DIGIT)+;
 NUMBER: '-'? ( '.' DIGIT+ | DIGIT+ ( '.' DIGIT*)?);
 
 fragment DIGIT: [0-9];
 
 fragment LETTER: [a-zA-Z];
 
-fragment ALPHANUMERIC_CHAR: [a-zA-Z$_./"];
+fragment ALPHANUMERIC_CHAR: [a-zA-Z$_./"-];
 
-STRING: '"' ( '\\"' | .)*? '"';
-LIST: '[' (WORD (',' WORD)*)? ']';
+LIST: '[' (ID (',' ID)*)? ']';
 WS: [ \t\n\r]+ -> skip;
