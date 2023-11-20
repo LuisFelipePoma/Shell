@@ -4,6 +4,7 @@
 
 // Include the missing file here
 #include "libs/ShellExprBaseVisitor.h"
+#include "libs/ShellExprLexer.h"
 #include "libs/ShellExprParser.h"
 
 #include "llvm/IR/IRBuilder.h"
@@ -26,23 +27,54 @@ public:
 		  module(std::make_unique<llvm::Module>("LaPC2", *context)),
 		  builder(std::make_unique<llvm::IRBuilder<>>(*context)) {}
 
-	// start
+	// <------------------- start ------------------------->
 	virtual std::any visitStart(ShellExprParser::StartContext *ctx) override;
-	// complete_comand
-	// TODO
-	// list
-	// TODO
-	// command
+
+	// <------------------- command ----------------------->
 	virtual std::any visitSimpleStmt(ShellExprParser::SimpleStmtContext *ctx) override;
-	// compound_command
+
+	// <------------------- compound_command -------------->
 	// TODO
-	// simple_command
-	virtual std::any visitCmdSuff(ShellExprParser::CmdSuffContext *ctx) override;
+
+	// <------------------- simple_command ---------------->
+	virtual std::any visitCmdArgs(ShellExprParser::CmdArgsContext *ctx) override;
 	virtual std::any visitCmd(ShellExprParser::CmdContext *ctx) override;
-	// cmd_prefix
+	virtual std::any visitOperationStmt(ShellExprParser::OperationStmtContext *ctx) override;
+	// <------------------- args -------------------------->
+	virtual std::any visitArgsBody(ShellExprParser::ArgsBodyContext *ctx) override;
+
+	// <------------------- operation --------------------->
 	// TODO
-	// cmd_suffix
-	virtual std::any visitCmdSuffBody(ShellExprParser::CmdSuffBodyContext *ctx) override;
+
+	// <------------------- expr -------------------------->
+	// TODO
+
+	// <------------------- compound_list ----------------->
+	// TODO
+
+	// <------------------- for_clause -------------------->
+	// TODO
+
+	// <------------------- brace_group ------------------->
+	// TODO
+
+	// <------------------- do_group ---------------------->
+	// TODO
+
+	// <------------------- and_or ------------------------>
+	// TODO
+
+	// <------------------- pipeline ---------------------->
+	// TODO
+
+	// <------------------- if_clause --------------------->
+	// TODO
+
+	// <------------------- else_part --------------------->
+	// TODO
+
+	// <------------------- while_clause ------------------>
+	// TODO
 
 	// Functions of the Class Shell Visitor
 	void test()

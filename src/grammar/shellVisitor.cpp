@@ -9,10 +9,10 @@
 #include "shellVisitor.h"
 
 // Utils
-#include "../utils/ls.h"
 #include "../utils/cd.h"
 #include "../utils/export.h"
 #include "../utils/echo.h"
+#include "../utils/handleCmd.h"
 // start : comand EOF;
 std::any shellVisitor::visitStart(ShellExprParser::StartContext *ctx)
 {
@@ -35,6 +35,9 @@ std::any shellVisitor::visitSimpleStmt(ShellExprParser::SimpleStmtContext *ctx)
 // command :| compound_command 							# compoundStmt
 // TODO
 
+// command :| pipeline 									# pipelineStmt
+// TODO
+
 // _____________________________________________________________________________
 // |							compound_command								|
 // -----------------------------------------------------------------------------
@@ -55,38 +58,13 @@ std::any shellVisitor::visitSimpleStmt(ShellExprParser::SimpleStmtContext *ctx)
 // |							simple_command									|
 // -----------------------------------------------------------------------------
 
-// simple_command: cmd_prefix cmd_word cmd_suffix	    # cmdPrefWordSuff
-// TODO
-
-// simple_command: | cmd_prefix cmd_word				# cmdPrefWord
-// TODO
-
-// simple_command: | cmd_prefix						    # cmdPref
-// TODO
-
-// simple_command: | cmd_name cmd_suffix				# cmdSuff
-std::any shellVisitor::visitCmdSuff(ShellExprParser::CmdSuffContext *ctx)
+// simple_command: cmd_name args						# cmdArgs
+std::any shellVisitor::visitCmdArgs(ShellExprParser::CmdArgsContext *ctx)
 {
 	// std::cout << "cmd_name cmd_suffix\n";
-	std::string command = ctx->cmd_name()->WORD()->getText();
-	auto suffix = visit(ctx->cmd_suffix());
-	if (command == "cd")
-	{
-		changeDirectory(std::any_cast<std::string>(suffix));
-	}
-	else if (command == "export")
-	{
-		std::string assignation = ctx->cmd_suffix()->getText();
-		std::string name = assignation.substr(0, assignation.find("="));
-		std::string value = assignation.substr(assignation.find("=") + 1, assignation.length());
-		export_command(name.c_str(), value.c_str());
-	}
-	else if (command == "echo")
-	{
-		std::string variable = ctx->cmd_suffix()->getText();
-		std::string name = variable.substr(variable.find("$") + 1, variable.length());
-		echo_command(name.c_str());
-	}
+	std::string command = ctx->cmd_name()->ID()->getText();
+	auto args = std::any_cast<std::string>(visit(ctx->args()));
+	handleExecutionCmd(command + " " + args);
 
 	return std::any();
 }
@@ -95,30 +73,146 @@ std::any shellVisitor::visitCmdSuff(ShellExprParser::CmdSuffContext *ctx)
 std::any shellVisitor::visitCmd(ShellExprParser::CmdContext *ctx)
 {
 	// std::cout << "cmd_name\n";
-	std::string command = ctx->cmd_name()->WORD()->getText();
+	std::string command = ctx->cmd_name()->ID()->getText();
 
-	// Si el comando es "ls", ejecutar el comando del sistema
-	std::system(command.c_str());
+	handleExecutionCmd(command);
+
+	return std::any();
+}
+
+// simple_command: | operation                         # operationStmt
+std::any shellVisitor::visitOperationStmt(ShellExprParser::OperationStmtContext *ctx)
+{
+	visit(ctx->operation());
 	return std::any();
 }
 
 // _____________________________________________________________________________
-// |							cmd_prefix										|
+// |								  args									   |
 // -----------------------------------------------------------------------------
 
-// cmd_prefix : (io_redirect | assignment_word) (cmd_prefix)?
+// args: ID+								# argsBody
+std::any shellVisitor::visitArgsBody(ShellExprParser::ArgsBodyContext *ctx)
+{
+	std::string args;
+	for (auto i : ctx->ID())
+	{
+		args.append((i->getText()));
+		args.append(" ");
+	}
+	return std::any(args);
+}
+
+// _____________________________________________________________________________
+// |								operation									|
+// -----------------------------------------------------------------------------
+
+// operation : ID '=' expr                         # assign
+// TODO
+
+// operation : | 'export' ID '=' expr		       # export
+// TODO
+// else if (command == "export")
+// {
+// 	std::string assignation = ctx->cmd_suffix()->getText();
+// 	std::string name = assignation.substr(0, assignation.find("="));
+// 	std::string value = assignation.substr(assignation.find("=") + 1, assignation.length());
+// 	export_command(name.c_str(), value.c_str());
+// }
+// else if (command == "echo")
+// {
+// 	std::string variable = ctx->cmd_suffix()->getText();
+// 	std::string name = variable.substr(variable.find("$") + 1, variable.length());
+// 	echo_command(name.c_str());
+// }
+
+// operation : | 'let' ID '=' expr	                # declaration
 // TODO
 
 // _____________________________________________________________________________
-// |							cmd_suffix										|
+// |								expr										|
 // -----------------------------------------------------------------------------
 
-// cmd_suffix : (io_redirect | WORD) (cmd_suffix)? 		# cmdSuffBody
-std::any shellVisitor::visitCmdSuffBody(ShellExprParser::CmdSuffBodyContext *ctx)
-{
-	if (ctx->children.size() == 1)
-	{
-		return std::any(ctx->WORD()->getText());
-	}
-	return std::any();
-}
+// expr : expr ('*'|'/') expr                     # mulDivOpe
+// TODO
+
+// expr : | expr ('+'|'-') expr                   # sumMinOpe
+// TODO
+
+// expr : | expr ('<'|'>'|'>='|'<='| '==') expr   # compOpe
+// TODO
+
+// expr : | ID                                    # idStmt
+// TODO
+
+// expr : | LIST                                  # listStmt
+// TODO
+
+// _____________________________________________________________________________
+// |							compound_list									|
+// -----------------------------------------------------------------------------
+
+// compound_list: (command|and_or) (separator (command|and_or))* separator? # compoundListBody
+// TODO
+
+// _____________________________________________________________________________
+// |							  for_clause									|
+// -----------------------------------------------------------------------------
+
+// for_clause: FOR ID IN ID+ do_group          # forBody
+// TODO
+
+// _____________________________________________________________________________
+// |							  brace_group									|
+// -----------------------------------------------------------------------------
+
+// brace_group: LBRACE compound_list RBRACE    # braceBody
+// TODO
+
+// _____________________________________________________________________________
+// |								do_group									|
+// -----------------------------------------------------------------------------
+
+// do_group: DO compound_list DONE             # doBody
+// TODO
+
+// _____________________________________________________________________________
+// |								and_or										|
+// -----------------------------------------------------------------------------
+
+// and_or: pipeline (AND_IF pipeline | OR_IF pipeline)* #andOrBody
+// TODO
+
+// _____________________________________________________________________________
+// |							    pipeline									|
+// -----------------------------------------------------------------------------
+
+// pipeline: simple_command (('|'| io_redirect) simple_command)* #pipelineBody
+// TODO
+
+// _____________________________________________________________________________
+// |								if_clause									|
+// -----------------------------------------------------------------------------
+
+// if_clause: IF expr DO compound_list else_part DONE         #ifElseBody
+// TODO
+
+// if_clause: | IF expr do_group                              #ifBody
+// TODO
+
+// _____________________________________________________________________________
+// |								else_part									|
+// -----------------------------------------------------------------------------
+
+// else_part : ELSE IF expr DO command* else_part              #elseIfBody
+// TODO
+
+// else_part : | ELSE compound_list                            #elseBody
+// TODO
+
+// _____________________________________________________________________________
+// |							   while_clause									|
+// -----------------------------------------------------------------------------
+
+// while_clause: WHILE expr do_group                   #whileBody
+// TODO
