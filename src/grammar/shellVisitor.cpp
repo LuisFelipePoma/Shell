@@ -4,12 +4,12 @@
 #include <string>
 
 // Libraries from antlr4 files generated
+#include "libs/ShellExprLexer.h"
 #include "libs/ShellExprVisitor.h"
 #include "libs/ShellExprParser.h"
 #include "shellVisitor.h"
 
 // Utils
-#include "../utils/cd.h"
 #include "../utils/export.h"
 #include "../utils/echo.h"
 #include "../utils/handleCmd.h"
@@ -64,6 +64,7 @@ std::any shellVisitor::visitCmdArgs(ShellExprParser::CmdArgsContext *ctx)
 	// std::cout << "cmd_name cmd_suffix\n";
 	std::string command = ctx->cmd_name()->ID()->getText();
 	auto args = std::any_cast<std::string>(visit(ctx->args()));
+
 	handleExecutionCmd(command + " " + args);
 
 	return std::any();
@@ -75,6 +76,7 @@ std::any shellVisitor::visitCmd(ShellExprParser::CmdContext *ctx)
 	// std::cout << "cmd_name\n";
 	std::string command = ctx->cmd_name()->ID()->getText();
 
+	// Execute the command
 	handleExecutionCmd(command);
 
 	return std::any();
@@ -100,6 +102,7 @@ std::any shellVisitor::visitArgsBody(ShellExprParser::ArgsBodyContext *ctx)
 		args.append((i->getText()));
 		args.append(" ");
 	}
+	args.pop_back();
 	return std::any(args);
 }
 
@@ -108,45 +111,125 @@ std::any shellVisitor::visitArgsBody(ShellExprParser::ArgsBodyContext *ctx)
 // -----------------------------------------------------------------------------
 
 // operation : ID '=' expr                         # assign
-// TODO
+std::any shellVisitor::visitAssing(ShellExprParser::AssingContext *ctx)
+{
+	std::string assignation = ctx->ID()->getText();
+	auto value = std::any_cast<std::string>(visit(ctx->expr()));
+	if (memory.find(assignation) == memory.end())
+	{
+		std::cout << "Variable not found..." << std::endl;
+	}
+	else
+		memory[assignation] = value;
+	return std::any();
+}
 
 // operation : | 'export' ID '=' expr		       # export
-// TODO
-// else if (command == "export")
-// {
-// 	std::string assignation = ctx->cmd_suffix()->getText();
-// 	std::string name = assignation.substr(0, assignation.find("="));
-// 	std::string value = assignation.substr(assignation.find("=") + 1, assignation.length());
-// 	export_command(name.c_str(), value.c_str());
-// }
-// else if (command == "echo")
-// {
-// 	std::string variable = ctx->cmd_suffix()->getText();
-// 	std::string name = variable.substr(variable.find("$") + 1, variable.length());
-// 	echo_command(name.c_str());
-// }
+std::any shellVisitor::visitExport(ShellExprParser::ExportContext *ctx)
+{
+	std::string id = ctx->ID()->getText();
+	auto value = std::any_cast<std::string>(visit(ctx->expr()));
+	export_command(id.c_str(), value.c_str());
+
+	return std::any();
+}
 
 // operation : | 'let' ID '=' expr	                # declaration
-// TODO
+std::any shellVisitor::visitDeclaration(ShellExprParser::DeclarationContext *ctx)
+{
+	std::string id = ctx->ID()->getText();
+	auto value = std::any_cast<std::string>(visit(ctx->expr()));
+	if (memory.find(id) != memory.end())
+	{
+		std::cout << "Variable already exists..." << std::endl;
+	}
+	else
+		memory.insert(std::pair<std::string, std::string>(id, value));
+	return std::any();
+}
 
 // _____________________________________________________________________________
 // |								expr										|
 // -----------------------------------------------------------------------------
 
 // expr : expr ('*'|'/') expr                     # mulDivOpe
-// TODO
+std::any shellVisitor::visitMulDivOpe(ShellExprParser::MulDivOpeContext *ctx)
+{
+	auto left = std::any_cast<std::string>(visit(ctx->expr(0)));
+	auto right = std::any_cast<std::string>(visit(ctx->expr(1)));
+
+	switch (ctx->opt->getType())
+	{
+	case ShellExprLexer::MUL:
+		return std::any(std::to_string(std::stoi(left) * std::stoi(right)));
+	case ShellExprLexer::DIV:
+		return std::any(std::to_string(std::stoi(left) / std::stoi(right)));
+	}
+
+	return std::any();
+}
 
 // expr : | expr ('+'|'-') expr                   # sumMinOpe
-// TODO
+std::any shellVisitor::visitSumMinOpe(ShellExprParser::SumMinOpeContext *ctx)
+{
+	auto left = std::any_cast<std::string>(visit(ctx->expr(0)));
+	auto right = std::any_cast<std::string>(visit(ctx->expr(1)));
+
+	switch (ctx->opt->getType())
+	{
+	case ShellExprLexer::PLUS:
+		return std::any(std::to_string(std::stoi(left) + std::stoi(right)));
+	case ShellExprLexer::MINUS:
+		return std::any(std::to_string(std::stoi(left) - std::stoi(right)));
+	}
+	return std::any();
+}
 
 // expr : | expr ('<'|'>'|'>='|'<='| '==') expr   # compOpe
-// TODO
+std::any shellVisitor::visitCompOpe(ShellExprParser::CompOpeContext *ctx)
+{
+	auto left = std::any_cast<std::string>(visit(ctx->expr(0)));
+	auto right = std::any_cast<std::string>(visit(ctx->expr(1)));
+
+	switch (ctx->opt->getType())
+	{
+	case ShellExprLexer::LESS:
+		return std::any(std::to_string(std::stoi(left) < std::stoi(right)));
+	case ShellExprLexer::GREAT:
+		return std::any(std::to_string(std::stoi(left) > std::stoi(right)));
+	case ShellExprLexer::LESS_EQ:
+		return std::any(std::to_string(std::stoi(left) <= std::stoi(right)));
+	case ShellExprLexer::GREAT_EQ:
+		return std::any(std::to_string(std::stoi(left) >= std::stoi(right)));
+	case ShellExprLexer::EQUALS:
+		return std::any(std::to_string(std::stoi(left) == std::stoi(right)));
+	}
+	return std::any();
+}
 
 // expr : | ID                                    # idStmt
-// TODO
+std::any shellVisitor::visitIdStmt(ShellExprParser::IdStmtContext *ctx)
+{
+	std::string id = ctx->ID()->getText();
+	if (memory.find(id) != memory.end())
+		return memory[id];
+	return std::any(id);
+}
 
 // expr : | LIST                                  # listStmt
-// TODO
+std::any shellVisitor::visitListStmt(ShellExprParser::ListStmtContext *ctx)
+{
+	std::string list = ctx->LIST()->getText();
+	std::vector<std::any> arr;
+	// parse "list" to "arr"
+	std::istringstream iss(list);
+	for (std::string s; iss >> s;)
+	{
+		arr.push_back(s);
+	}
+
+	return std::any(arr);
+}
 
 // _____________________________________________________________________________
 // |							compound_list									|
