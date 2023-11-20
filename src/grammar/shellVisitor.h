@@ -54,6 +54,7 @@ public:
 	virtual std::any visitCompOpe(ShellExprParser::CompOpeContext *ctx) override;
 	virtual std::any visitIdStmt(ShellExprParser::IdStmtContext *ctx) override;
 	virtual std::any visitListStmt(ShellExprParser::ListStmtContext *ctx) override;
+
 	// <------------------- compound_list ----------------->
 	// TODO
 
@@ -87,6 +88,17 @@ public:
 		std::error_code error;
 		llvm::raw_fd_stream outLL("test.ll", error);
 		module->print(outLL, nullptr);
+	}
+
+	// aux
+	llvm::Function *F;
+
+	// aux methods
+	llvm::AllocaInst *CreateEntryBlockAlloca(llvm::StringRef varName)
+	{
+		llvm::IRBuilder<> TmpB(&F->getEntryBlock(), F->getEntryBlock().begin());
+		return TmpB.CreateAlloca(llvm::Type::getDoubleTy(*context), nullptr,
+								 varName);
 	}
 
 private:

@@ -7,6 +7,7 @@
 - `setup.sh` : Script for create `PATHS` for llvm and antlr and activate `env`
 - `requirements.txt` : File for install `antlr4` with pip
 - For debugger/runner of vscode works, add this variables to your `.zshrc`, `.bashrc`, `etc`.
+  
 	```bash
 	export MYDEPENDENCIES=$HOME/Apps
 	export LLVMDEPENDENCIES=$HOME/llvm/llvm-project/build
@@ -111,12 +112,19 @@
 	cmake --install build --prefix /usr/local/include
 	```
 
-## Using llvm
+## Executing the project
+
+- Creating the `antlr4` files for `c++`
+	```bash
+	antlr4 -no-listener -visitor -Dlanguage=Cpp -o libs ShellExpr.g4
+	```
+  	> Run this command from the folder `./src/grammar`.
 	
-- Compiling a llvm project
+- Compiling and running the project
 	```bash
 	cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=1
 	```
+	> Run this command from the folder `./src`.
 	```bash
 	cmake --build build
 	```
@@ -124,4 +132,6 @@
 	```bash
 	build/prog
 	```
-> PoV
+	> Also you can run the project with `F5` in vscode, with the config files `task.json` and `launch.json`
+
+> PoV siempre con Alegria.
