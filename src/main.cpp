@@ -61,14 +61,11 @@ int main(int argc, char **argv)
 	std::string colors[] = {BLUE_TEXT, GREEN_TEXT, YELLOW_TEXT, RED_TEXT, MAGENTA_TEXT, WHITE_TEXT};
 	int colorIndex = 0;
 
-
 	shellVisitor visitor;
 	const char *username = getenv("USER");
 
-
 	if (username == nullptr)
 		username = "user";
-
 
 	std::string line = "";
 	std::string lineCP;
@@ -246,6 +243,11 @@ int main(int argc, char **argv)
 					lineCP = mulStr;
 					mulStr = "";
 				}
+			}
+			if (lineCP.empty() || lineCP == "\n")
+			{
+				line = "";
+				continue;
 			}
 			antlr4::ANTLRInputStream input(lineCP);
 			ShellExprLexer lexer(&input);
