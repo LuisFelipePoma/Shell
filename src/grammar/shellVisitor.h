@@ -25,7 +25,8 @@ public:
 	shellVisitor()
 		: context(std::make_unique<llvm::LLVMContext>()),
 		  module(std::make_unique<llvm::Module>("LaPC2", *context)),
-		  builder(std::make_unique<llvm::IRBuilder<>>(*context)) {}
+		  builder(std::make_unique<llvm::IRBuilder<>>(*context)),
+		  isPipeline(false) {}
 
 	// _____________________________________________________________________________
 	// |	/	/	/	/	/	VISITORS FUNCTIONS	/	/	/	/	/	/	/	/	|
@@ -79,11 +80,10 @@ public:
 	// TODO
 
 	// <------------------- and_or ------------------------>
-
-	// TODO
+	virtual std::any visitAndOrBody(ShellExprParser::AndOrBodyContext *ctx) override;
 
 	// <------------------- pipeline ---------------------->
-	// TODO
+	virtual std::any visitPipelineBody(ShellExprParser::PipelineBodyContext *ctx) override;
 
 	// <------------------- if_clause --------------------->
 	virtual std::any visitIfElseBody(ShellExprParser::IfElseBodyContext *ctx) override;
@@ -108,6 +108,8 @@ public:
 	}
 
 private:
+	bool isAndOr;
+	bool isPipeline;
 	std::map<std::string, std::any> memory;
 	std::unique_ptr<llvm::LLVMContext> context;
 	std::unique_ptr<llvm::Module> module;

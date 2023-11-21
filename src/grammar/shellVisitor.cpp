@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 #include <cstdio>
+#include <sys/wait.h>
 
 // Libraries from antlr4 files generated
 #include "libs/ShellExprLexer.h"
@@ -147,9 +148,9 @@ std::any shellVisitor::visitCmdArgs(ShellExprParser::CmdArgsContext *ctx)
 	auto args = std::any_cast<std::string>(visit(ctx->args()));
 
 	// Execute the command of the system with his args*
-	handleExecutionCmd(command + " " + args);
+	std::string result = std::any_cast<std::string>(handleExecutionCmd(command + " " + args, isPipeline));
 
-	return std::any();
+	return std::any(result);
 }
 
 // simple_command: | cmd_name											# cmd
@@ -170,9 +171,9 @@ std::any shellVisitor::visitCmd(ShellExprParser::CmdContext *ctx)
 	std::string command = ctx->cmd_name()->ID()->getText();
 
 	// Execute the command of the system without args
-	handleExecutionCmd(command);
+	std::string result = std::any_cast<std::string>(handleExecutionCmd(command, isPipeline));
 
-	return std::any();
+	return std::any(result);
 }
 
 // simple_command: | operation                         					# operationStmt
@@ -642,15 +643,106 @@ std::any shellVisitor::visitForBody(ShellExprParser::ForBodyContext *ctx)
 // |								and_or										|
 // -----------------------------------------------------------------------------
 
-// and_or: pipeline (AND_IF pipeline | OR_IF pipeline)* #andOrBody
-// TODO
+// and_or: pipeline (AND_IF pipeline | OR_IF pipeline)* 				#andOrBody
+/*
+	----
+	Body of and and or inline
+	```antlr
+		and_or: pipeline (AND_IF pipeline | OR_IF pipeline)* 			#andOrBody
+	```
+	Looks like this:
+		- `ls && pwd || echo dont work`
+*/
+std::any shellVisitor::visitAndOrBody(ShellExprParser::AndOrBodyContext *ctx)
+{
+	// Variable to store the pipeline
+	std::string output = "";
+
+	// If the size is 1, return the pipeline
+	if (ctx->children.size() == 1)
+	{
+		// Read the pipeline
+		output = std::any_cast<std::string>(visit(ctx->children[0]));
+		return std::any(output);
+	}
+
+	// Set the flags
+	isAndOr = true;
+
+	// Parse all to a string
+	for (int i = 0; i < ctx->children.size(); i++)
+	{
+		isPipeline = true;
+		// If the child is a pipeline, add it to the string
+		if (!ctx->children[i]->getText().compare("&&") ||
+			!ctx->children[i]->getText().compare("||"))
+			output += ctx->children[i]->getText();
+		else
+			// If the child is not a pipeline, visit it and add it to the string
+			output += std::any_cast<std::string>(visit(ctx->children[i]));
+		isPipeline = false;
+	}
+	isAndOr = false;
+
+	// Run the command
+	auto response = handleExecutionCmd(output, isPipeline);
+
+	return std::any(response);
+}
 
 // _____________________________________________________________________________
 // |							    pipeline									|
 // -----------------------------------------------------------------------------
 
-// pipeline: simple_command (('|'| io_redirect) simple_command)* 		# pipelineBody
-// TODO
+// pipeline: simple_command (io_redirect simple_command)*				# pipelineBody
+/*
+	----
+	Body of the pipeline
+	```antlr
+		if_clause: IF expr DO compound_list else_part DONE         			# ifElseBody
+	```
+	Looks like this:
+		- `ls | grep .cpp > list.txt`
+*/
+std::any shellVisitor::visitPipelineBody(ShellExprParser::PipelineBodyContext *ctx)
+{
+	// Variable to store the pipeline
+	std::string output = "";
+
+	// If the size is 1, return the pipeline
+	if (ctx->children.size() == 1)
+	{
+		output = std::any_cast<std::string>(visit(ctx->children[0]));
+		return std::any(output);
+	}
+	// Set the flags
+	isPipeline = true;
+
+	// Parse all to a string
+	for (int i = 0; i < ctx->children.size(); i++)
+	{
+		// If the child is a pipeline, add it to the string
+		if (!ctx->children[i]->getText().compare("<") ||
+			!ctx->children[i]->getText().compare(">") ||
+			!ctx->children[i]->getText().compare(">>") ||
+			!ctx->children[i]->getText().compare("|"))
+			output += ctx->children[i]->getText();
+		else
+			// If the child is not a pipeline, visit it and add it to the string
+			output += std::any_cast<std::string>(visit(ctx->children[i]));
+	}
+	isPipeline = false;
+
+	// Verify if the pipeline is a and/or
+	if (isAndOr)
+		return std::any(output);
+
+	// Run the command
+	auto response = handleExecutionCmd(output, isPipeline);
+
+	// Return the response
+	return std::any(response);
+}
 
 // _____________________________________________________________________________
 // |								if_clause									|
