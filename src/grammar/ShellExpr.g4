@@ -40,12 +40,13 @@ operation
 	: ID '=' expr                         									# assing
     | 'export' ID '=' expr		        									# export
 	| 'let' ID '=' expr	                									# declaration
+	| 'show' ID 	                										# show
 	;
 	
 expr
 	: expr opt=('*'|'/') expr                     							# mulDivOpe
     | expr opt=('+'|'-') expr                   							# sumMinOpe
-    | expr opt=('<'|'>'|'>='|'<='| '==') expr   							# compOpe
+    | expr opt=('<'|'>'|'>='|'<='| '=='|'!=') expr   							# compOpe
     | ID                                    								# idStmt
     | LIST                                  								# listStmt
     ;
@@ -55,7 +56,7 @@ compound_list
 	;
 
 for_clause
-	: FOR ID IN ID+ do_group          										# forBody
+	: FOR ID IN expr do_group          										# forBody
 	;
 
 brace_group
@@ -142,6 +143,7 @@ LESS		: '<';
 GREAT		: '>';
 GREAT_EQ	: '>=';
 LESS_EQ		: '<=';
+NOT_EQ		: '!=';
 EQUALS		: '==';
 
 
