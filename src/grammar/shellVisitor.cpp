@@ -540,11 +540,7 @@ std::any shellVisitor::visitListStmt(ShellExprParser::ListStmtContext *ctx)
 std::any shellVisitor::visitCompoundListBody(ShellExprParser::CompoundListBodyContext *ctx)
 {
 	// Iterate over the children in order
-	for (size_t i = 0; i < ctx->children.size(); ++i)
-	{
-		visit(ctx->children[i]);
-	}
-
+	visitChildren(ctx);
 	return std::any();
 }
 
