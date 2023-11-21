@@ -1,8 +1,11 @@
+#ifndef __SUGGESTIONS_H__
+#define __SUGGESTIONS_H__
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <iostream>
-#define ALPHABET_SIZE 26
+#define ALPHABET_SIZE 50
 
 // Estructura para un nodo en el árbol de búsqueda
 struct TrieNode
@@ -27,7 +30,7 @@ struct TrieNode *createNode()
 }
 
 // Insertar una palabra en el árbol de búsqueda
-void insertWord(struct TrieNode *root, const char *word)
+inline void insertWord(struct TrieNode *root, const char *word)
 {
     struct TrieNode *current = root;
     for (int i = 0; i < strlen(word); i++)
@@ -43,11 +46,11 @@ void insertWord(struct TrieNode *root, const char *word)
 }
 
 // Función auxiliar para imprimir palabras a partir de un nodo dado
-void printWords(struct TrieNode *node, const char *prefix)
+inline void printWords(struct TrieNode *node, const char *prefix)
 {
     if (node->isEndOfWord)
     {
-        printf("%s\n", prefix);
+        printf("PRUEBITA: %s\n", prefix);
     }
 
     for (int i = 0; i < ALPHABET_SIZE; i++)
@@ -62,7 +65,7 @@ void printWords(struct TrieNode *node, const char *prefix)
 }
 
 // Buscar palabras que coincidan con un prefijo dado
-void autoComplete(struct TrieNode *root, const char *prefix)
+inline void autoComplete(struct TrieNode *root, const char *prefix)
 {
     struct TrieNode *current = root;
 
@@ -82,33 +85,4 @@ void autoComplete(struct TrieNode *root, const char *prefix)
     printWords(current, prefix);
 }
 
-// Función principal
-int main()
-{
-    while (true)
-    {
-        char c = std::cin.get();
-
-        // Verificar si el carácter es un Tab (código ASCII 9)
-        if (static_cast<int>(c) == 9)
-        {
-            std::cout<<"YA GYM\n";
-            struct TrieNode *root = createNode();
-
-            // Insertar palabras de ejemplo
-            insertWord(root, "apple");
-            insertWord(root, "app");
-            insertWord(root, "application");
-            insertWord(root, "banana");
-            insertWord(root, "bat");
-
-            // Autocompletar con un prefijo
-            autoComplete(root, "app");
-        }
-
-        // Imprimir el carácter si no es un Tab
-        std::cout << "Caracter ingresado: " << c << std::endl;
-    }
-    
-    return 0;
-}
+#endif

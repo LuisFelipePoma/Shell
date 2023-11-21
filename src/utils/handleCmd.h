@@ -29,7 +29,7 @@ inline bool handleExecutionCmd(const std::string &command)
 		}
 		else if (result != 0)
 		{
-			std::cerr << "Command exited with status: " << result << "\n";
+			//std::cerr << "Command exited with status: " << result << "\n";
 			return false;
 		}
 	}
