@@ -90,14 +90,36 @@ std::any shellVisitor::visitSimpleStmt(ShellExprParser::SimpleStmtContext *ctx)
 // -----------------------------------------------------------------------------
 
 // function_definition	: DEF ID LPAREN function_args RPAREN LBRACE compound_list RBRACE		# functionDef
-// TODO
+std::any shellVisitor::visitFunctionDef(ShellExprParser::FunctionDefContext *ctx)
+{
+	// Read the name of the function
+	auto nameFunction = ctx->ID()->getText();
+
+	// Read args of the function in a vector
+	auto functionArgs = std::any_cast<std::vector<std::string>>(visit(ctx->function_args()));
+
+	std::cout << nameFunction << "\n";
+
+
+	return std::any();
+}
 
 // _____________________________________________________________________________
 // |							function_args									|
 // -----------------------------------------------------------------------------
 
 // function_args 		: ID (',' ID)* 															# functionArgs
-// TODO
+std::any shellVisitor::visitFunctionArgs(ShellExprParser::FunctionArgsContext *ctx)
+{
+	// Read and insert the args values to a vector
+	std::vector<std::string> args;
+	for (auto i : ctx->ID())
+	{
+		args.push_back(i->getText());
+	}
+
+	return std::any(args);
+}
 
 // _____________________________________________________________________________
 // |							simple_command									|
@@ -703,7 +725,7 @@ std::any shellVisitor::visitElseIfBody(ShellExprParser::ElseIfBodyContext *ctx)
 {
 	// Read the condition
 	auto condition = std::any_cast<std::string>(visit(ctx->expr()));
-	
+
 	// Equals '1' -> true
 	if (std::stoi(condition) == 1)
 	{

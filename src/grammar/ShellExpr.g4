@@ -1,7 +1,7 @@
 grammar ShellExpr;
 
 start
-	: command EOF
+	: command (separator command)* EOF
     ;
 
 command

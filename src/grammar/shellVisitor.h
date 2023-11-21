@@ -41,10 +41,10 @@ public:
 	// TODO
 
 	// <------------------- function_definition ----------->
-	// TODO
+	virtual std::any visitFunctionDef(ShellExprParser::FunctionDefContext *ctx) override;
 
 	// <------------------- function_args ----------------->
-	// TODO
+	virtual std::any visitFunctionArgs(ShellExprParser::FunctionArgsContext *ctx) override;
 
 	// <------------------- simple_command ---------------->
 	virtual std::any visitCmdArgs(ShellExprParser::CmdArgsContext *ctx) override;
