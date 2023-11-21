@@ -1,13 +1,14 @@
 grammar ShellExpr;
 
 start
-	: command EOF
+	: command (separator command)* EOF
     ;
 
 command
 	: simple_command														# simpleStmt
 	| compound_command														# compoundStmt
-	| pipeline          													# pipelineStmt
+	| pipeline																# pipelineStmt
+	| and_or        														# andOrStmt
 	;
 
 compound_command
@@ -72,7 +73,7 @@ and_or
     ;
 
 pipeline
-	: simple_command (('|'| io_redirect) simple_command)* 					# pipelineBody
+	: simple_command (io_redirect simple_command)* 							# pipelineBody
     ;
 
 if_clause
@@ -102,13 +103,10 @@ separator
 
 io_redirect
 	: '<'
-	| LESSAND
 	| '>'
-	| GREATAND
 	| DGREAT
-	| LESSGREAT
-	| CLOBBER;
-
+	| '|'
+	;
 
 WHILE		: 'while';
 FOR			: 'for';
@@ -127,13 +125,8 @@ RBRACE		: '}';
 LPAREN		: '(';
 RPAREN		: ')';
 
-DLESS		: '<<';
 DGREAT		: '>>';
-LESSAND		: '<&';
-GREATAND	: '>&';
-LESSGREAT	: '<>';
-DLESSDASH	: '<<-';
-CLOBBER		: '>|';
+PIPE		: '|';
 
 MUL			: '*';
 DIV			: '/';

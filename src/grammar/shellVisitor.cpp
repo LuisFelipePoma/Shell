@@ -2,6 +2,8 @@
 #include <any>
 #include <memory>
 #include <string>
+#include <cstdio>
+#include <sys/wait.h>
 
 // Libraries from antlr4 files generated
 #include "libs/ShellExprLexer.h"
@@ -90,14 +92,35 @@ std::any shellVisitor::visitSimpleStmt(ShellExprParser::SimpleStmtContext *ctx)
 // -----------------------------------------------------------------------------
 
 // function_definition	: DEF ID LPAREN function_args RPAREN LBRACE compound_list RBRACE		# functionDef
-// TODO
+std::any shellVisitor::visitFunctionDef(ShellExprParser::FunctionDefContext *ctx)
+{
+	// Read the name of the function
+	auto nameFunction = ctx->ID()->getText();
+
+	// Read args of the function in a vector
+	auto functionArgs = std::any_cast<std::vector<std::string>>(visit(ctx->function_args()));
+
+	std::cout << nameFunction << "\n";
+
+	return std::any();
+}
 
 // _____________________________________________________________________________
 // |							function_args									|
 // -----------------------------------------------------------------------------
 
 // function_args 		: ID (',' ID)* 															# functionArgs
-// TODO
+std::any shellVisitor::visitFunctionArgs(ShellExprParser::FunctionArgsContext *ctx)
+{
+	// Read and insert the args values to a vector
+	std::vector<std::string> args;
+	for (auto i : ctx->ID())
+	{
+		args.push_back(i->getText());
+	}
+
+	return std::any(args);
+}
 
 // _____________________________________________________________________________
 // |							simple_command									|
@@ -125,9 +148,9 @@ std::any shellVisitor::visitCmdArgs(ShellExprParser::CmdArgsContext *ctx)
 	auto args = std::any_cast<std::string>(visit(ctx->args()));
 
 	// Execute the command of the system with his args*
-	handleExecutionCmd(command + " " + args);
+	std::string result = std::any_cast<std::string>(handleExecutionCmd(command + " " + args, isPipeline));
 
-	return std::any();
+	return std::any(result);
 }
 
 // simple_command: | cmd_name											# cmd
@@ -148,8 +171,9 @@ std::any shellVisitor::visitCmd(ShellExprParser::CmdContext *ctx)
 	std::string command = ctx->cmd_name()->ID()->getText();
 
 	// Execute the command of the system without args
-	handleExecutionCmd(command);
-	return std::any();
+	std::string result = std::any_cast<std::string>(handleExecutionCmd(command, isPipeline));
+
+	return std::any(result);
 }
 
 // simple_command: | operation                         					# operationStmt
@@ -516,11 +540,7 @@ std::any shellVisitor::visitListStmt(ShellExprParser::ListStmtContext *ctx)
 std::any shellVisitor::visitCompoundListBody(ShellExprParser::CompoundListBodyContext *ctx)
 {
 	// Iterate over the children in order
-	for (size_t i = 0; i < ctx->children.size(); ++i)
-	{
-		visit(ctx->children[i]);
-	}
-
+	visitChildren(ctx);
 	return std::any();
 }
 
@@ -619,15 +639,106 @@ std::any shellVisitor::visitForBody(ShellExprParser::ForBodyContext *ctx)
 // |								and_or										|
 // -----------------------------------------------------------------------------
 
-// and_or: pipeline (AND_IF pipeline | OR_IF pipeline)* #andOrBody
-// TODO
+// and_or: pipeline (AND_IF pipeline | OR_IF pipeline)* 				#andOrBody
+/*
+	----
+	Body of and and or inline
+	```antlr
+		and_or: pipeline (AND_IF pipeline | OR_IF pipeline)* 			#andOrBody
+	```
+	Looks like this:
+		- `ls && pwd || echo dont work`
+*/
+std::any shellVisitor::visitAndOrBody(ShellExprParser::AndOrBodyContext *ctx)
+{
+	// Variable to store the pipeline
+	std::string output = "";
+
+	// If the size is 1, return the pipeline
+	if (ctx->children.size() == 1)
+	{
+		// Read the pipeline
+		output = std::any_cast<std::string>(visit(ctx->children[0]));
+		return std::any(output);
+	}
+
+	// Set the flags
+	isAndOr = true;
+
+	// Parse all to a string
+	for (int i = 0; i < ctx->children.size(); i++)
+	{
+		isPipeline = true;
+		// If the child is a pipeline, add it to the string
+		if (!ctx->children[i]->getText().compare("&&") ||
+			!ctx->children[i]->getText().compare("||"))
+			output += ctx->children[i]->getText();
+		else
+			// If the child is not a pipeline, visit it and add it to the string
+			output += std::any_cast<std::string>(visit(ctx->children[i]));
+		isPipeline = false;
+	}
+	isAndOr = false;
+
+	// Run the command
+	auto response = handleExecutionCmd(output, isPipeline);
+
+	return std::any(response);
+}
 
 // _____________________________________________________________________________
 // |							    pipeline									|
 // -----------------------------------------------------------------------------
 
-// pipeline: simple_command (('|'| io_redirect) simple_command)* 		# pipelineBody
-// TODO
+// pipeline: simple_command (io_redirect simple_command)*				# pipelineBody
+/*
+	----
+	Body of the pipeline
+	```antlr
+		if_clause: IF expr DO compound_list else_part DONE         			# ifElseBody
+	```
+	Looks like this:
+		- `ls | grep .cpp > list.txt`
+*/
+std::any shellVisitor::visitPipelineBody(ShellExprParser::PipelineBodyContext *ctx)
+{
+	// Variable to store the pipeline
+	std::string output = "";
+
+	// If the size is 1, return the pipeline
+	if (ctx->children.size() == 1)
+	{
+		output = std::any_cast<std::string>(visit(ctx->children[0]));
+		return std::any(output);
+	}
+	// Set the flags
+	isPipeline = true;
+
+	// Parse all to a string
+	for (int i = 0; i < ctx->children.size(); i++)
+	{
+		// If the child is a pipeline, add it to the string
+		if (!ctx->children[i]->getText().compare("<") ||
+			!ctx->children[i]->getText().compare(">") ||
+			!ctx->children[i]->getText().compare(">>") ||
+			!ctx->children[i]->getText().compare("|"))
+			output += ctx->children[i]->getText();
+		else
+			// If the child is not a pipeline, visit it and add it to the string
+			output += std::any_cast<std::string>(visit(ctx->children[i]));
+	}
+	isPipeline = false;
+
+	// Verify if the pipeline is a and/or
+	if (isAndOr)
+		return std::any(output);
+
+	// Run the command
+	auto response = handleExecutionCmd(output, isPipeline);
+
+	// Return the response
+	return std::any(response);
+}
 
 // _____________________________________________________________________________
 // |								if_clause									|
@@ -703,7 +814,7 @@ std::any shellVisitor::visitElseIfBody(ShellExprParser::ElseIfBodyContext *ctx)
 {
 	// Read the condition
 	auto condition = std::any_cast<std::string>(visit(ctx->expr()));
-	
+
 	// Equals '1' -> true
 	if (std::stoi(condition) == 1)
 	{
