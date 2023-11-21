@@ -27,6 +27,10 @@ public:
 		  module(std::make_unique<llvm::Module>("LaPC2", *context)),
 		  builder(std::make_unique<llvm::IRBuilder<>>(*context)) {}
 
+	// _____________________________________________________________________________
+	// |	/	/	/	/	/	VISITORS FUNCTIONS	/	/	/	/	/	/	/	/	|
+	// -----------------------------------------------------------------------------
+
 	// <------------------- start ------------------------->
 	virtual std::any visitStart(ShellExprParser::StartContext *ctx) override;
 
@@ -34,6 +38,12 @@ public:
 	virtual std::any visitSimpleStmt(ShellExprParser::SimpleStmtContext *ctx) override;
 
 	// <------------------- compound_command -------------->
+	// TODO
+
+	// <------------------- function_definition ----------->
+	// TODO
+
+	// <------------------- function_args ----------------->
 	// TODO
 
 	// <------------------- simple_command ---------------->
@@ -69,41 +79,32 @@ public:
 	// TODO
 
 	// <------------------- and_or ------------------------>
-	
+
 	// TODO
 
 	// <------------------- pipeline ---------------------->
 	// TODO
 
 	// <------------------- if_clause --------------------->
-	virtual std::any visitIfElseBody(ShellExprParser::IfElseBodyContext *ctx){
-		g
-	}
-	// TODO
+	virtual std::any visitIfElseBody(ShellExprParser::IfElseBodyContext *ctx) override;
+	virtual std::any visitIfBody(ShellExprParser::IfBodyContext *ctx) override;
 
 	// <------------------- else_part --------------------->
-	// TODO
+	virtual std::any visitElseIfBody(ShellExprParser::ElseIfBodyContext *ctx) override;
+	virtual std::any visitElseBody(ShellExprParser::ElseBodyContext *ctx) override;
 
 	// <------------------- while_clause ------------------>
-	// TODO
+	virtual std::any visitWhileBody(ShellExprParser::WhileBodyContext *ctx) override;
 
+	// _____________________________________________________________________________
+	// |	/	/	/	/	/	BUILD-IN FUNCTIONS	/	/	/	/	/	/	/	/	|
+	// -----------------------------------------------------------------------------
 	// Functions of the Class Shell Visitor
 	void test()
 	{
 		std::error_code error;
 		llvm::raw_fd_stream outLL("test.ll", error);
 		module->print(outLL, nullptr);
-	}
-
-	// aux
-	llvm::Function *F;
-
-	// aux methods
-	llvm::AllocaInst *CreateEntryBlockAlloca(llvm::StringRef varName)
-	{
-		llvm::IRBuilder<> TmpB(&F->getEntryBlock(), F->getEntryBlock().begin());
-		return TmpB.CreateAlloca(llvm::Type::getDoubleTy(*context), nullptr,
-								 varName);
 	}
 
 private:

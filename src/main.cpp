@@ -37,39 +37,47 @@ int main(int argc, char **argv)
 	}
 	bool singleLine = true;
 	std::string mulStr;
-	std::cout << BOLD_TEXT;
 
 	while (true)
 	{
 		lineCP = "";
-		if (singleLine){
-			std::cout << colors[colorIndex] << "Pambi" << username << " ~ "  << WHITE_TEXT;
+		std::cout << BOLD_TEXT;
+		if (singleLine)
+		{
+			std::cout << colors[colorIndex] << "Pambi" << username << " ~ " << WHITE_TEXT;
 			std::getline(std::cin, line);
 
-			if (line == "**"){
+			if (line == "**")
+			{
 				singleLine = false;
 				continue;
 			}
 			lineCP = line;
 		}
-		else{
-			std::cout << colors[colorIndex] << "     " << username << " ~ "  << WHITE_TEXT;
+		else
+		{
+			std::cout << colors[colorIndex] << "     " << username << " ~ " << WHITE_TEXT;
 			std::getline(std::cin, line);
 
-			if (line != "**"){
+			if (line != "**")
+			{
 				mulStr += line + " ";
 				continue;
 			}
-			else{
+			else
+			{
 				singleLine = true;
 				lineCP = mulStr;
 				mulStr = "";
 			}
 		}
 
-		if (line == "exit") break;
-		if (line.empty()) continue;
-		if (line == "!!"){
+		if (line == "exit")
+			break;
+		if (line.empty())
+			continue;
+		if (line == "!!")
+		{
 			colorIndex == std::size(colors) - 1 ? colorIndex = 0 : colorIndex++;
 			continue;
 		}
