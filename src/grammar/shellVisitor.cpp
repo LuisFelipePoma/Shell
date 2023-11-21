@@ -2,6 +2,7 @@
 #include <any>
 #include <memory>
 #include <string>
+#include <cstdio>
 
 // Libraries from antlr4 files generated
 #include "libs/ShellExprLexer.h"
@@ -100,7 +101,6 @@ std::any shellVisitor::visitFunctionDef(ShellExprParser::FunctionDefContext *ctx
 
 	std::cout << nameFunction << "\n";
 
-
 	return std::any();
 }
 
@@ -171,6 +171,7 @@ std::any shellVisitor::visitCmd(ShellExprParser::CmdContext *ctx)
 
 	// Execute the command of the system without args
 	handleExecutionCmd(command);
+
 	return std::any();
 }
 
