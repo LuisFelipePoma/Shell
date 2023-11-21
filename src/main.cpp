@@ -121,13 +121,21 @@ int main(int argc, char **argv)
 			restoreTerminal();
 
 			// Autocomplete the command if there is only one word
+
 			if (words.size() == 1)
 			{
-				std::cout << "[" << username << "] $ ";
 				std::string wordToReplace = words[0];
 				lastWord = wordToReplace;
 				std::string newWord = line.substr(0, lastSpacePos) + wordToReplace;
 				line = newWord;
+				if (singleLine)
+				{
+					std::cout << colors[colorIndex] << "Pambi" << username << " ~ " << WHITE_TEXT;
+				}
+				else
+				{
+					std::cout << colors[colorIndex] << "     " << username << " ~ " << WHITE_TEXT;
+				}
 				std::cout << "" << line << std::flush;
 			}
 			else if (words.size() > 1)
@@ -135,27 +143,37 @@ int main(int argc, char **argv)
 				for (int i = 0; i < words.size(); i++)
 				{
 					if (i == words.size() - 1)
-					{
 						std::cout << words[i] << "\n";
-					}
 					else
-					{
 						std::cout << words[i] << "\t";
-					}
 				}
-				std::cout << "[" << username << "] $ ";
+				if (singleLine)
+				{
+					std::cout << colors[colorIndex] << "Pambi" << username << " ~ " << WHITE_TEXT;
+				}
+				else
+				{
+					std::cout << colors[colorIndex] << "     " << username << " ~ " << WHITE_TEXT;
+				}
 				std::cout << "" << line << std::flush;
 			}
 			else
 			{
-				std::cout << "[" << username << "] $ ";
 				std::cout << "" << line << std::flush;
 			}
 		}
+		// Verify if the character is a backspace (ASCII code 127)
 		else if (static_cast<int>(c) == 127)
 		{
 			std::cout << "\033[2K\r";
-			std::cout << "[" << username << "] $ ";
+			if (singleLine)
+			{
+				std::cout << colors[colorIndex] << "Pambi" << username << " ~ " << WHITE_TEXT;
+			}
+			else
+			{
+				std::cout << colors[colorIndex] << "     " << username << " ~ " << WHITE_TEXT;
+			}
 			if (line.size() > 0)
 			{
 				line.pop_back();
@@ -165,7 +183,6 @@ int main(int argc, char **argv)
 		else if (c == '\n')
 		{
 			lineCP = "";
-
 			if (line == "exit")
 				break;
 			if (line.empty())
@@ -174,18 +191,25 @@ int main(int argc, char **argv)
 			if (line == "!!")
 			{
 				colorIndex == std::size(colors) - 1 ? colorIndex = 0 : colorIndex++;
+				if (singleLine)
+				{
+					std::cout << colors[colorIndex] << "Pambi" << username << " ~ " << WHITE_TEXT;
+				}
+				else
+				{
+					std::cout << colors[colorIndex] << "     " << username << " ~ " << WHITE_TEXT;
+				}
+				line = "";
 				continue;
 			}
 
 			restoreTerminal();
-			//std::cout << "LINE: " << line << "\n";
 			if (singleLine)
 			{
 				if (line == "**")
 				{
 					std::cout << colors[colorIndex] << "     " << username << " ~ " << WHITE_TEXT;
 					singleLine = false;
-					// Clear the line
 					line = "";
 					continue;
 				}
@@ -198,7 +222,6 @@ int main(int argc, char **argv)
 				{
 					std::cout << colors[colorIndex] << "     " << username << " ~ " << WHITE_TEXT;
 					mulStr += line + " ";
-					// Clear the line
 					line = "";
 					continue;
 				}
@@ -210,8 +233,7 @@ int main(int argc, char **argv)
 					mulStr = "";
 				}
 			}
-
-			antlr4::ANTLRInputStream input(line);
+			antlr4::ANTLRInputStream input(lineCP);
 			ShellExprLexer lexer(&input);
 			antlr4::CommonTokenStream tokens(&lexer);
 			ShellExprParser parser(&tokens);
