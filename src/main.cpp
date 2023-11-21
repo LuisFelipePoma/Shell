@@ -5,15 +5,26 @@
 #include <string>
 #include <termios.h>
 #include <unistd.h>
+#include <vector>
+#include <cstdlib> // for getenv
 
 #include "grammar/libs/ShellExprLexer.h"
 #include "grammar/libs/ShellExprParser.h"
 #include "grammar/shellVisitor.h"
 #include "antlr4-runtime.h"
 #include "utils/suggestions.h"
-#include <vector>
-#include <cstdlib> // for getenv
 
+#define RED_TEXT "\033[31m"
+#define GREEN_TEXT "\033[32m"
+#define YELLOW_TEXT "\033[33m"
+#define BLUE_TEXT "\033[34m"
+#define MAGENTA_TEXT "\033[35m"
+#define CYAN_TEXT "\033[36m"
+#define WHITE_TEXT "\033[37m"
+#define RESET_COLOR "\033[0m"
+
+#define BOLD_TEXT "\033[1m"
+#define RESET_BOLD_TEXT "\033[22m"
 
 // Función para configurar el modo de entrada no canónico y desactivar el eco
 void configureTerminal()
@@ -35,14 +46,25 @@ void restoreTerminal()
 
 int main(int argc, char **argv)
 {
+	std::string colors[] = {BLUE_TEXT, GREEN_TEXT, YELLOW_TEXT, RED_TEXT, MAGENTA_TEXT, WHITE_TEXT};
+	int colorIndex = 0;
+
 	shellVisitor visitor;
 	const char *username = getenv("USER");
+
 	if (username == nullptr)
 		username = "user";
 
 	std::string line = "";
+	std::string lineCP;
+
+	bool singleLine = true;
+	std::string mulStr = "";
+	std::cout << BOLD_TEXT;
+
 	// Prompt del shell
-	std::cout << "[" << username << "] $ ";
+	std::cout << colors[colorIndex] << "Pambi" << username << " ~ " << WHITE_TEXT;
+
 	while (true)
 	{
 		// Function to not need to press enter
@@ -121,27 +143,74 @@ int main(int argc, char **argv)
 						std::cout << words[i] << "\t";
 					}
 				}
-				line = "";
 				std::cout << "[" << username << "] $ ";
+				std::cout << "" << line << std::flush;
 			}
-		}
-		else if (c != '\n')
-		{
-			restoreTerminal();
-			line += c;
-		}
-		else
-		{
-			restoreTerminal();
-			if (line == "exit")
+			else
 			{
-				break;
+				std::cout << "[" << username << "] $ ";
+				std::cout << "" << line << std::flush;
 			}
+		}
+		else if (static_cast<int>(c) == 127)
+		{
+			std::cout << "\033[2K\r";
+			std::cout << "[" << username << "] $ ";
+			if (line.size() > 0)
+			{
+				line.pop_back();
+				std::cout << "" << line << std::flush;
+			}
+		}
+		else if (c == '\n')
+		{
+			lineCP = "";
 
+			if (line == "exit")
+				break;
 			if (line.empty())
+				continue;
+			// Change color
+			if (line == "!!")
 			{
+				colorIndex == std::size(colors) - 1 ? colorIndex = 0 : colorIndex++;
 				continue;
 			}
+
+			restoreTerminal();
+			//std::cout << "LINE: " << line << "\n";
+			if (singleLine)
+			{
+				if (line == "**")
+				{
+					std::cout << colors[colorIndex] << "     " << username << " ~ " << WHITE_TEXT;
+					singleLine = false;
+					// Clear the line
+					line = "";
+					continue;
+				}
+				std::cout << colors[colorIndex] << "Pambi" << username << " ~ " << WHITE_TEXT;
+				lineCP = line;
+			}
+			else
+			{
+				if (line != "**")
+				{
+					std::cout << colors[colorIndex] << "     " << username << " ~ " << WHITE_TEXT;
+					mulStr += line + " ";
+					// Clear the line
+					line = "";
+					continue;
+				}
+				else
+				{
+					std::cout << colors[colorIndex] << "Pambi" << username << " ~ " << WHITE_TEXT;
+					singleLine = true;
+					lineCP = mulStr;
+					mulStr = "";
+				}
+			}
+
 			antlr4::ANTLRInputStream input(line);
 			ShellExprLexer lexer(&input);
 			antlr4::CommonTokenStream tokens(&lexer);
@@ -149,8 +218,12 @@ int main(int argc, char **argv)
 			auto tree = parser.start();
 			visitor.visitStart(tree);
 			visitor.test();
-			std::cout << "[" << username << "] $ ";
 			line = "";
+		}
+		else
+		{
+			restoreTerminal();
+			line += c;
 		}
 	}
 	return 0;
