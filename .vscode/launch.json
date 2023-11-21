@@ -7,9 +7,12 @@
 			"request": "launch",
 			"program": "${workspaceRoot}/src/build/debug/prog",
 			"cwd": "${workspaceRoot}/src",
-			"args": ["${workspaceRoot}/src/test.txt"],
+			"miDebuggerPath": "/usr/bin/gdb",
+			"args": [
+				"${workspaceRoot}/src/test.txt"
+			],
 			"preLaunchTask": "build",
-			"externalConsole": false
+			"externalConsole": false,
 		},
 		{
 			"name": "Run Project",

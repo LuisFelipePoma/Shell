@@ -126,7 +126,7 @@
 	```
 	> Run this command from the folder `./src`.
 	```bash
-	cmake --build build
+	cmake --build build -j8
 	```
 	> Execute the binary file in `./build/`
 	```bash
