@@ -44,16 +44,31 @@ void restoreTerminal()
 	tcsetattr(STDIN_FILENO, TCSANOW, &t);
 }
 
+#define RED_TEXT "\033[31m"
+#define GREEN_TEXT "\033[32m"
+#define YELLOW_TEXT "\033[33m"
+#define BLUE_TEXT "\033[34m"
+#define MAGENTA_TEXT "\033[35m"
+#define CYAN_TEXT "\033[36m"
+#define WHITE_TEXT "\033[37m"
+#define RESET_COLOR "\033[0m"
+
+#define BOLD_TEXT "\033[1m"
+#define RESET_BOLD_TEXT "\033[22m"
+
 int main(int argc, char **argv)
 {
 	std::string colors[] = {BLUE_TEXT, GREEN_TEXT, YELLOW_TEXT, RED_TEXT, MAGENTA_TEXT, WHITE_TEXT};
 	int colorIndex = 0;
 
+
 	shellVisitor visitor;
 	const char *username = getenv("USER");
 
+
 	if (username == nullptr)
 		username = "user";
+
 
 	std::string line = "";
 	std::string lineCP;
@@ -202,7 +217,6 @@ int main(int argc, char **argv)
 				line = "";
 				continue;
 			}
-
 			restoreTerminal();
 			if (singleLine)
 			{

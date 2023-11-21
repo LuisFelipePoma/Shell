@@ -25,7 +25,12 @@ public:
 	shellVisitor()
 		: context(std::make_unique<llvm::LLVMContext>()),
 		  module(std::make_unique<llvm::Module>("LaPC2", *context)),
-		  builder(std::make_unique<llvm::IRBuilder<>>(*context)) {}
+		  builder(std::make_unique<llvm::IRBuilder<>>(*context)),
+		  isPipeline(false) {}
+
+	// _____________________________________________________________________________
+	// |	/	/	/	/	/	VISITORS FUNCTIONS	/	/	/	/	/	/	/	/	|
+	// -----------------------------------------------------------------------------
 
 	// <------------------- start ------------------------->
 	virtual std::any visitStart(ShellExprParser::StartContext *ctx) override;
@@ -35,6 +40,12 @@ public:
 
 	// <------------------- compound_command -------------->
 	// TODO
+
+	// <------------------- function_definition ----------->
+	virtual std::any visitFunctionDef(ShellExprParser::FunctionDefContext *ctx) override;
+
+	// <------------------- function_args ----------------->
+	virtual std::any visitFunctionArgs(ShellExprParser::FunctionArgsContext *ctx) override;
 
 	// <------------------- simple_command ---------------->
 	virtual std::any visitCmdArgs(ShellExprParser::CmdArgsContext *ctx) override;
@@ -47,6 +58,7 @@ public:
 	virtual std::any visitAssing(ShellExprParser::AssingContext *ctx) override;
 	virtual std::any visitExport(ShellExprParser::ExportContext *ctx) override;
 	virtual std::any visitDeclaration(ShellExprParser::DeclarationContext *ctx) override;
+	virtual std::any visitShow(ShellExprParser::ShowContext *ctx) override;
 
 	// <------------------- expr -------------------------->
 	virtual std::any visitMulDivOpe(ShellExprParser::MulDivOpeContext *ctx) override;
@@ -56,10 +68,10 @@ public:
 	virtual std::any visitListStmt(ShellExprParser::ListStmtContext *ctx) override;
 
 	// <------------------- compound_list ----------------->
-	// TODO
+	virtual std::any visitCompoundListBody(ShellExprParser::CompoundListBodyContext *ctx) override;
 
 	// <------------------- for_clause -------------------->
-	// TODO
+	virtual std::any visitForBody(ShellExprParser::ForBodyContext *ctx) override;
 
 	// <------------------- brace_group ------------------->
 	// TODO
@@ -68,20 +80,25 @@ public:
 	// TODO
 
 	// <------------------- and_or ------------------------>
-	// TODO
+	virtual std::any visitAndOrBody(ShellExprParser::AndOrBodyContext *ctx) override;
 
 	// <------------------- pipeline ---------------------->
-	// TODO
+	virtual std::any visitPipelineBody(ShellExprParser::PipelineBodyContext *ctx) override;
 
 	// <------------------- if_clause --------------------->
-	// TODO
+	virtual std::any visitIfElseBody(ShellExprParser::IfElseBodyContext *ctx) override;
+	virtual std::any visitIfBody(ShellExprParser::IfBodyContext *ctx) override;
 
 	// <------------------- else_part --------------------->
-	// TODO
+	virtual std::any visitElseIfBody(ShellExprParser::ElseIfBodyContext *ctx) override;
+	virtual std::any visitElseBody(ShellExprParser::ElseBodyContext *ctx) override;
 
 	// <------------------- while_clause ------------------>
-	// TODO
+	virtual std::any visitWhileBody(ShellExprParser::WhileBodyContext *ctx) override;
 
+	// _____________________________________________________________________________
+	// |	/	/	/	/	/	BUILD-IN FUNCTIONS	/	/	/	/	/	/	/	/	|
+	// -----------------------------------------------------------------------------
 	// Functions of the Class Shell Visitor
 	void test()
 	{
@@ -90,18 +107,9 @@ public:
 		module->print(outLL, nullptr);
 	}
 
-	// aux
-	llvm::Function *F;
-
-	// aux methods
-	llvm::AllocaInst *CreateEntryBlockAlloca(llvm::StringRef varName)
-	{
-		llvm::IRBuilder<> TmpB(&F->getEntryBlock(), F->getEntryBlock().begin());
-		return TmpB.CreateAlloca(llvm::Type::getDoubleTy(*context), nullptr,
-								 varName);
-	}
-
 private:
+	bool isAndOr;
+	bool isPipeline;
 	std::map<std::string, std::any> memory;
 	std::unique_ptr<llvm::LLVMContext> context;
 	std::unique_ptr<llvm::Module> module;
