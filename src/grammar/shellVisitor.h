@@ -27,7 +27,8 @@ public:
 		: context(std::make_unique<llvm::LLVMContext>()),
 		  module(std::make_unique<llvm::Module>("LaPC2", *context)),
 		  builder(std::make_unique<llvm::IRBuilder<>>(*context)),
-		  isPipeline(false) {}
+		  isPipeline(false),
+		  isAndOr(false) {}
 
 	// _____________________________________________________________________________
 	// |	/	/	/	/	/	VISITORS FUNCTIONS	/	/	/	/	/	/	/	/	|
