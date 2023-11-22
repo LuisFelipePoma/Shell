@@ -268,7 +268,7 @@ int main(int argc, char **argv)
 			ShellExprParser parser(&tokens);
 			auto tree = parser.start();
 			visitor.visitStart(tree);
-			visitor.test();
+			// visitor.test();
 			if (singleLine)
 			{
 				std::cout << colors[colorIndex] << "Pambi" << username << " ~ " << WHITE_TEXT;
