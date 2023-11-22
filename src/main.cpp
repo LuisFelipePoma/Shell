@@ -194,11 +194,22 @@ int main(int argc, char **argv)
 		}
 		else if (c == '\n')
 		{
+
 			lineCP = "";
 			if (line == "exit")
 				break;
 			if (line.empty())
+			{
+				if (singleLine)
+				{
+					std::cout << colors[colorIndex] << "Pambi" << username << " ~ " << WHITE_TEXT;
+				}
+				else
+				{
+					std::cout << colors[colorIndex] << "     " << username << " ~ " << WHITE_TEXT;
+				}
 				continue;
+			}
 			// Change color
 			if (line == "!!")
 			{
@@ -224,7 +235,7 @@ int main(int argc, char **argv)
 					line = "";
 					continue;
 				}
-				std::cout << colors[colorIndex] << "Pambi" << username << " ~ " << WHITE_TEXT;
+				// std::cout << colors[colorIndex] << "Pambi" << username << " ~ " << WHITE_TEXT;
 				lineCP = line;
 			}
 			else
@@ -238,7 +249,8 @@ int main(int argc, char **argv)
 				}
 				else
 				{
-					std::cout << colors[colorIndex] << "Pambi" << username << " ~ " << WHITE_TEXT;
+					if(mulStr == "")
+						std::cout << colors[colorIndex] << "Pambi" << username << " ~ " << WHITE_TEXT;
 					singleLine = true;
 					lineCP = mulStr;
 					mulStr = "";
@@ -256,6 +268,14 @@ int main(int argc, char **argv)
 			auto tree = parser.start();
 			visitor.visitStart(tree);
 			visitor.test();
+			if (singleLine)
+			{
+				std::cout << colors[colorIndex] << "Pambi" << username << " ~ " << WHITE_TEXT;
+			}
+			else
+			{
+				std::cout << colors[colorIndex] << "     " << username << " ~ " << WHITE_TEXT;
+			}
 			line = "";
 		}
 		else
