@@ -249,7 +249,7 @@ int main(int argc, char **argv)
 				}
 				else
 				{
-					if(mulStr == "")
+					if (mulStr == "")
 						std::cout << colors[colorIndex] << "Pambi" << username << " ~ " << WHITE_TEXT;
 					singleLine = true;
 					lineCP = mulStr;
@@ -261,6 +261,7 @@ int main(int argc, char **argv)
 				line = "";
 				continue;
 			}
+			// main.cpp
 			antlr4::ANTLRInputStream input(lineCP);
 			ShellExprLexer lexer(&input);
 			antlr4::CommonTokenStream tokens(&lexer);

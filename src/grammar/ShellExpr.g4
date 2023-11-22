@@ -20,7 +20,7 @@ compound_command
 	;
 
 function_definition
-	: DEF ID LPAREN function_args RPAREN LBRACE compound_list RBRACE		# functionDef
+	: DEF ID LPAREN function_args? RPAREN LBRACE compound_list RBRACE		# functionDef
 	;
 
 function_args
@@ -42,6 +42,7 @@ operation
     | 'export' ID '=' expr		        									# export
 	| 'let' ID '=' expr	                									# declaration
 	| 'show' ID 	                										# show
+	| 'fn' ID LPAREN function_args? RPAREN									# callFunction
 	;
 	
 expr

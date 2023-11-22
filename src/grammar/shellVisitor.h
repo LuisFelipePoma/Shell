@@ -7,6 +7,7 @@
 #include "libs/ShellExprLexer.h"
 #include "libs/ShellExprParser.h"
 
+#include "antlr4-runtime.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
 #include <algorithm>
@@ -59,6 +60,7 @@ public:
 	virtual std::any visitExport(ShellExprParser::ExportContext *ctx) override;
 	virtual std::any visitDeclaration(ShellExprParser::DeclarationContext *ctx) override;
 	virtual std::any visitShow(ShellExprParser::ShowContext *ctx) override;
+	virtual std::any visitCallFunction(ShellExprParser::CallFunctionContext *ctx) override;
 
 	// <------------------- expr -------------------------->
 	virtual std::any visitMulDivOpe(ShellExprParser::MulDivOpeContext *ctx) override;
@@ -108,9 +110,17 @@ public:
 	}
 
 private:
+	struct Function
+	{
+		std::vector<std::string> args;
+	};
+
 	bool isAndOr;
 	bool isPipeline;
+	// Create a map to store variables
 	std::map<std::string, std::any> memory;
+	// Create a map to store functions
+	std::map<std::string, Function> functions;
 	std::unique_ptr<llvm::LLVMContext> context;
 	std::unique_ptr<llvm::Module> module;
 	std::unique_ptr<llvm::IRBuilder<>> builder;

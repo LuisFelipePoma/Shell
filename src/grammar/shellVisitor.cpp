@@ -91,16 +91,28 @@ std::any shellVisitor::visitSimpleStmt(ShellExprParser::SimpleStmtContext *ctx)
 // |							function_definition								|
 // -----------------------------------------------------------------------------
 
-// function_definition	: DEF ID LPAREN function_args RPAREN LBRACE compound_list RBRACE		# functionDef
+// function_definition	: DEF ID LPAREN function_args? RPAREN LBRACE compound_list RBRACE		# functionDef
 std::any shellVisitor::visitFunctionDef(ShellExprParser::FunctionDefContext *ctx)
 {
 	// Read the name of the function
 	auto nameFunction = ctx->ID()->getText();
+	// Verify if the function exists
+	if (functions.find(nameFunction) != functions.end())
+	{
+		std::cout << "Function already exists..." << std::endl;
+		return std::any();
+	}
 
+	std::vector<std::string> functionArgs;
 	// Read args of the function in a vector
-	auto functionArgs = std::any_cast<std::vector<std::string>>(visit(ctx->function_args()));
+	if (ctx->function_args())
+		functionArgs = std::any_cast<std::vector<std::string>>(visit(ctx->function_args()));
 
-	std::cout << nameFunction << "\n";
+	// Create a Function instance
+	Function function;
+	function.args = functionArgs;
+	// Save the function in the map
+	functions[nameFunction] = function;
 
 	return std::any();
 }
@@ -360,6 +372,36 @@ std::any shellVisitor::visitShow(ShellExprParser::ShowContext *ctx)
 	{
 		// If the variable doesn't exists, throw an error
 		std::cout << "Variable not found..." << std::endl;
+	}
+
+	return std::any();
+}
+
+// 'fn' ID LPAREN function_args? RPAREN									# callFunction
+std::any shellVisitor::visitCallFunction(ShellExprParser::CallFunctionContext *ctx)
+{
+	// Read the name of the function
+	auto nameFunction = ctx->ID()->getText();
+
+	if (functions.find(nameFunction) == functions.end())
+	{
+		std::cout << "Function not found..." << std::endl;
+		return std::any();
+	}
+	std::vector<std::string> args;
+	if (ctx->function_args())
+		args = std::any_cast<std::vector<std::string>>(visit(ctx->function_args()));
+
+	// Read the function
+	auto function = functions[nameFunction];
+
+	// Show Function
+	std::cout << "Function: " << nameFunction << std::endl;
+	std::cout << "Args: " << function.args.size() << std::endl;
+	// Show args
+	for (auto arg : function.args)
+	{
+		std::cout << arg << std::endl;
 	}
 
 	return std::any();
