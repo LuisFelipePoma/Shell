@@ -1,6 +1,21 @@
 # Shell
+## Índice
+- [Shell](#shell)
+	- [Índice](#índice)
+	- [Description](#description)
+	- [Configuration](#configuration)
+	- [Installation](#installation)
+		- [Install Antlr](#install-antlr)
+		- [Configure Antlr Runtime](#configure-antlr-runtime)
+		- [Install llvm](#install-llvm)
+	- [Executing Project](#executing-project)
 
-## Files for Configuration
+## Description
+
+This is a simple project for a shell interpreter, using `antlr4` and `llvm` for the compiler.
+
+
+## Configuration
 
 - `.vscode` : Configuration files (`tasks.json` and `launch.json`) for debug in vscode
 - `.clangd` : Configuration file for clangd server language
@@ -112,7 +127,7 @@
 	cmake --install build --prefix /usr/local/include
 	```
 
-## Executing the project
+## Executing Project
 
 - Creating the `antlr4` files for `c++`
 	```bash
