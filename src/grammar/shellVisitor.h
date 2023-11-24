@@ -11,6 +11,7 @@
 #include "llvm/IR/LLVMContext.h"
 #include <algorithm>
 #include <any>
+#include <cstdio>
 #include <iostream>
 #include <llvm-17/llvm/ADT/APInt.h>
 #include <llvm/ADT/StringRef.h>
@@ -30,6 +31,7 @@
 #include <llvm/Support/TargetSelect.h>
 #include "llvm/Linker/Linker.h"
 #include <unistd.h>
+#include <utility>
 
 /* added the Impl at the end of the class to avoid it being .gitignored sorry */
 class shellVisitor : ShellExprBaseVisitor
@@ -164,16 +166,37 @@ public:
 	// Generate Code IR Initial
 	void generateMainIR();
 
-	// Generate Code IR for a system function call
-	void IRFunctionSysCall(const char *nameFunction, std::vector<llvm::Type *> argTypes);
+	// <------------------------- BLOCKS
+	// Generate Code IR Declaration for a system function call
+	void IRFunctionSysDecl(const char *nameFunction, std::vector<llvm::Type *> argTypes, bool isVar);
+
+	// Generate Code IR in a block for a function call
+	void IRFunctionCallBlock(const char *nameFunction, std::vector<llvm::Value *>
+														   args);
 
 	// Create a new LLVM function
-	llvm::AllocaInst *CreateEntryBlockAlloca(llvm::StringRef varName)
+	llvm::AllocaInst *CreateEntryBlockAlloca(llvm::StringRef varName, llvm::Type *type)
 	{
 		llvm::IRBuilder<> TmpB(&F->getEntryBlock(), F->getEntryBlock().begin());
-		return TmpB.CreateAlloca(llvm::Type::getDoubleTy(*context), nullptr,
+		return TmpB.CreateAlloca(type, nullptr,
 								 varName);
 	}
+	// <------------------------- TYPES
+
+	// Create a new LLVM Value String
+	llvm::Value *CreateStringPtr(std::string string);
+
+	// Create a new LLVM Value Float
+	llvm::Value *CreateFloatV(double number);
+
+	// Create a new LLVM Value Int8
+	llvm::Value *CreateInt8V(int number);
+
+	// Get the Value from the memory to LLVM VAlue
+	llvm::Value *getValueAny(std::any value, std::string output_type);
+
+	// Get the Value from the memory to LLVM VAlue
+	llvm::Value *getValueFromMemory(std::string id, std::string output_type);
 
 	llvm::Function *F; // aux
 private:
@@ -181,6 +204,20 @@ private:
 	{
 		std::vector<std::string> args;
 	};
+	enum SYS_FUNCTIONS
+	{
+		SYSTEM,
+		SETENV,
+		CHDIR,
+		PUTS
+	};
+	std::map<SYS_FUNCTIONS, const char *> SysFunctionNames = {
+		{SYSTEM, "system"},
+		{SETENV, "setenv"},
+		{CHDIR, "chdir"},
+		{PUTS, "puts"},
+	};
+
 	llvm::ExecutionEngine *engine;
 	bool isAndOr;
 	bool isPipeline;
@@ -194,6 +231,7 @@ private:
 
 	// Types
 	llvm::Type *int8Type;
+	llvm::Type *int32Type;
 	llvm::Type *charPtrType;
 };
 
