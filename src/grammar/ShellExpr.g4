@@ -55,7 +55,7 @@ expr
     ;
 
 compound_list
-	: (command|and_or) (separator (command|and_or))* separator? 			# compoundListBody
+	: (command) (separator (command))* separator? 			# compoundListBody
 	;
 
 for_clause

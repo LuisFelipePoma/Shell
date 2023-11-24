@@ -635,12 +635,12 @@ std::any shellVisitor::visitListStmt(ShellExprParser::ListStmtContext *ctx)
 		compound_list: (command|and_or) (separator (command|and_or))* separator? # compoundListBody
 	```
 */
-std::any shellVisitor::visitCompoundListBody(ShellExprParser::CompoundListBodyContext *ctx)
-{
-	// Iterate over the children in order
-	visitChildren(ctx);
-	return std::any();
-}
+// std::any shellVisitor::visitCompoundListBody(ShellExprParser::CompoundListBodyContext *ctx)
+// {
+// 	// Iterate over the children in order
+// 	visitChildren(ctx);
+// 	return std::any();
+// }
 
 // _____________________________________________________________________________
 // |							  for_clause									|
@@ -856,45 +856,21 @@ std::any shellVisitor::visitPipelineBody(ShellExprParser::PipelineBodyContext *c
 */
 std::any shellVisitor::visitIfElseBody(ShellExprParser::IfElseBodyContext *ctx)
 {
-	// Read the condition
-	// auto condition = std::any_cast<std::string>(visit(ctx->expr()));
 
-	// // Equals '1' -> true
-	// if (std::stoi(condition) == 1)
-	// {
-	// 	// Visit the body of the if
-	// 	visit(ctx->compound_list());
-	// }
-	// else
-	// {
-	// 	// Visit the body of the else
-	// 	visit(ctx->else_part());
-	// }
-	// return std::any();
-	// std::cout<<"visitIfelse\n";
 	llvm::Value *condition = std::any_cast<llvm::Value *>(visit(ctx->expr()));
-
-	// Convert condition to a bool by comparing non-equal to 0.0.
-	condition = builder->CreateFCmpONE(
-		condition, llvm::ConstantFP::get(*context, llvm::APFloat(0.0)), "ifcond");
 
 	llvm::Function *TheFunction = builder->GetInsertBlock()->getParent();
 	// Create blocks for the then and else cases.  Insert the 'then' block at the
 	// end of the function.
 
-	llvm::BasicBlock *BB = llvm::BasicBlock::Create(*context, "entry", TheFunction);
-	builder->SetInsertPoint(BB);
-
-	llvm::BasicBlock *doBlock = llvm::BasicBlock::Create(*context, "doBB");
+	llvm::BasicBlock *doBlock = llvm::BasicBlock::Create(*context, "doBB", TheFunction);
 	llvm::BasicBlock *elseBlock = llvm::BasicBlock::Create(*context, "elseBB");
 	llvm::BasicBlock *mergeBlock = llvm::BasicBlock::Create(*context, "mergeBB");
 
 	builder->CreateCondBr(condition, doBlock, elseBlock);
 
 	// Emit then value.
-	// Construir el bloque 'then'
 	builder->SetInsertPoint(doBlock);
-	// llvm::Value *doV = std::any_cast<llvm::Value *>(visit(ctx->compound_list()));
 	visit(ctx->compound_list());
 	builder->CreateBr(mergeBlock);
 
@@ -915,10 +891,7 @@ std::any shellVisitor::visitIfElseBody(ShellExprParser::IfElseBodyContext *ctx)
 	// Emit merge block.
 	TheFunction->insert(TheFunction->end(), mergeBlock);
 	builder->SetInsertPoint(mergeBlock);
-	// llvm::PHINode *PN = builder->CreatePHI(llvm::Type::getDoubleTy(*context), 2, "iftmp");
 
-	// PN->addIncoming(doV, doBlock);
-	// PN->addIncoming(elseV, elseBlock);
 	return std::any(nullptr);
 }
 
@@ -974,25 +947,48 @@ std::any shellVisitor::visitIfBody(ShellExprParser::IfBodyContext *ctx)
 */
 std::any shellVisitor::visitElseIfBody(ShellExprParser::ElseIfBodyContext *ctx)
 {
-	// Read the condition
-	auto condition = std::any_cast<std::string>(visit(ctx->expr()));
 
-	// Equals '1' -> true
-	if (std::stoi(condition) == 1)
+	llvm::Value *condition = std::any_cast<llvm::Value *>(visit(ctx->expr()));
+
+	llvm::Function *TheFunction = builder->GetInsertBlock()->getParent();
+	// Create blocks for the then and else cases.  Insert the 'then' block at the
+	// end of the function.
+
+	llvm::BasicBlock *doBlock = llvm::BasicBlock::Create(*context, "doBB", TheFunction);
+	llvm::BasicBlock *elseBlock = llvm::BasicBlock::Create(*context, "elseBB");
+	llvm::BasicBlock *mergeBlock = llvm::BasicBlock::Create(*context, "mergeBB");
+
+	builder->CreateCondBr(condition, doBlock, elseBlock);
+
+	// Emit then value.
+	builder->SetInsertPoint(doBlock);
+	// Visit the body of the if
+	for (auto command : ctx->command())
 	{
-		// Visit the body of the if
-		for (auto command : ctx->command())
-		{
-			// Visit the commands
-			visit(command);
-		}
+		// Visit the commands
+		visit(command);
 	}
-	else
-	{
-		// Visit the body of the else
-		visit(ctx->else_part());
-	}
-	return std::any();
+	builder->CreateBr(mergeBlock);
+
+	// Codegen of 'Then' can change the current block, update ThenBB for the PHI.
+	doBlock = builder->GetInsertBlock();
+
+	// Emit else block.
+	TheFunction->insert(TheFunction->end(), elseBlock);
+	builder->SetInsertPoint(elseBlock);
+
+	// llvm::Value *elseV = std::any_cast<llvm::Value *>(visit(ctx->else_part()));
+	visit(ctx->else_part());
+
+	builder->CreateBr(mergeBlock);
+	// Codegen of 'Else' can change the current block, update ElseBB for the PHI.
+	elseBlock = builder->GetInsertBlock();
+
+	// Emit merge block.
+	TheFunction->insert(TheFunction->end(), mergeBlock);
+	builder->SetInsertPoint(mergeBlock);
+
+	return std::any(nullptr);
 }
 
 // else_part : ELSE compound_list                            			# elseBody

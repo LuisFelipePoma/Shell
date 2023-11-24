@@ -91,7 +91,7 @@ public:
 	virtual std::any visitListStmt(ShellExprParser::ListStmtContext *ctx) override;
 
 	// <------------------- compound_list ----------------->
-	virtual std::any visitCompoundListBody(ShellExprParser::CompoundListBodyContext *ctx) override;
+	// virtual std::any visitCompoundListBody(ShellExprParser::CompoundListBodyContext *ctx) override;
 
 	// <------------------- for_clause -------------------->
 	virtual std::any visitForBody(ShellExprParser::ForBodyContext *ctx) override;
