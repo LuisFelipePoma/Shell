@@ -456,16 +456,19 @@ std::any shellVisitor::visitCallFunction(ShellExprParser::CallFunctionContext *c
 std::any shellVisitor::visitMulDivOpe(ShellExprParser::MulDivOpeContext *ctx)
 {
 	// Read the left and right part of the expression
-	auto left = std::any_cast<llvm::Value *>(visit(ctx->expr(0)));
-	auto right = std::any_cast<llvm::Value *>(visit(ctx->expr(1)));
+	auto left = visit(ctx->expr(0));
+	auto leftV = getValueAny(left, "any");
+
+	auto right = visit(ctx->expr(1));
+	auto rightV = getValueAny(right, "any");
 
 	// Verify the operation (only accepts numbers operations for now)
 	switch (ctx->opt->getType())
 	{
 	case ShellExprLexer::MUL:
-		return std::any(builder->CreateFMul(left, right, "mulTemp"));
+		return std::any(builder->CreateFMul(leftV, rightV, "mulTemp"));
 	case ShellExprLexer::DIV:
-		return std::any(builder->CreateFDiv(left, right, "divTemp"));
+		return std::any(builder->CreateFDiv(leftV, rightV, "divTemp"));
 	}
 	return std::any(nullptr);
 }
@@ -484,16 +487,19 @@ std::any shellVisitor::visitMulDivOpe(ShellExprParser::MulDivOpeContext *ctx)
 std::any shellVisitor::visitSumMinOpe(ShellExprParser::SumMinOpeContext *ctx)
 {
 	// Read the left and right part of the expression
-	auto left = std::any_cast<llvm::Value *>(visit(ctx->expr(0)));
-	auto right = std::any_cast<llvm::Value *>(visit(ctx->expr(1)));
+	auto left = visit(ctx->expr(0));
+	auto leftV = getValueAny(left, "any");
+
+	auto right = visit(ctx->expr(1));
+	auto rightV = getValueAny(right, "any");
 
 	// Verify the operation (only accepts numbers operations for now)
 	switch (ctx->opt->getType())
 	{
 	case ShellExprLexer::PLUS:
-		return std::any(builder->CreateFDiv(left, right, "addTemp"));
+		return std::any(builder->CreateFDiv(leftV, rightV, "addTemp"));
 	case ShellExprLexer::MINUS:
-		return std::any(builder->CreateFSub(left, right, "subTemp"));
+		return std::any(builder->CreateFSub(leftV, rightV, "subTemp"));
 	}
 	return std::any(nullptr);
 }
@@ -555,7 +561,6 @@ std::any shellVisitor::visitNumber(ShellExprParser::NumberContext *ctx)
 	auto numVal = std::stod(ctx->NUMBER()->getText());
 
 	// If the variable doesn't exists, return the same name
-	// llvm::Value *val = llvm::ConstantFP::get(*context, llvm::APFloat(numVal));
 	return std::any(numVal);
 }
 
@@ -637,7 +642,7 @@ std::any shellVisitor::visitListStmt(ShellExprParser::ListStmtContext *ctx)
 */
 // std::any shellVisitor::visitCompoundListBody(ShellExprParser::CompoundListBodyContext *ctx)
 // {
-// 	// Iterate over the children in order
+// // Iterate over the children in order
 // 	visitChildren(ctx);
 // 	return std::any();
 // }
@@ -1001,12 +1006,12 @@ std::any shellVisitor::visitElseIfBody(ShellExprParser::ElseIfBodyContext *ctx)
 	Looks like this:
 		- `else echo part`
 */
-std::any shellVisitor::visitElseBody(ShellExprParser::ElseBodyContext *ctx)
-{
-	// Visit the body of the else
-	visit(ctx->compound_list());
-	return std::any();
-}
+// std::any shellVisitor::visitElseBody(ShellExprParser::ElseBodyContext *ctx)
+// {
+// 	// Visit the body of the else
+// 	visit(ctx->compound_list());
+// 	return std::any();
+// }
 
 // _____________________________________________________________________________
 // |							   while_clause									|
@@ -1110,8 +1115,45 @@ llvm::Value *shellVisitor::getValueAny(std::any valueAny, std::string output_typ
 	}
 	else if (valueAny.type() == typeid(std::vector<std::any>))
 	{
-		// Handle array type
-		// ...
+		std::vector<std::any> values = std::any_cast<std::vector<std::any>>(valueAny); // the vector of values
+		if (output_type.compare("str") == 0)
+		{
+			std::string array = "[ ";
+			for (auto i : values)
+			{
+				if (i.type() == typeid(std::string))
+					array.append(std::any_cast<std::string>(i));
+				else if (i.type() == typeid(double))
+					array.append(std::to_string(std::any_cast<double>(i)));
+				array.append(" , ");
+			}
+			array.pop_back();
+			array.append(" ]");
+			return CreateStringPtr(array);
+		}
+
+		// Create an array type
+		llvm::ArrayType *arrayType = llvm::ArrayType::get(llvm::Type::getInt32Ty(*context), values.size());
+
+		// Create a global variable to hold the array
+		llvm::GlobalVariable *arrayVar = new llvm::GlobalVariable(
+			*module,
+			arrayType,
+			false, // not constant
+			llvm::GlobalValue::PrivateLinkage,
+			nullptr // no initializer yet
+		);
+
+		// Create a constant array and initialize the global variable with it
+		std::vector<llvm::Constant *> constants;
+		for (const std::any &value : values)
+		{
+			int intValue = std::any_cast<int>(value); // replace with the appropriate cast
+			constants.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(*context), intValue));
+		}
+		llvm::Constant *constantArray = llvm::ConstantArray::get(arrayType, constants);
+		arrayVar->setInitializer(constantArray);
+		return arrayVar;
 	}
 	else
 	{

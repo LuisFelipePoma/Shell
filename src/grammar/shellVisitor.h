@@ -114,7 +114,7 @@ public:
 
 	// <------------------- else_part --------------------->
 	virtual std::any visitElseIfBody(ShellExprParser::ElseIfBodyContext *ctx) override;
-	virtual std::any visitElseBody(ShellExprParser::ElseBodyContext *ctx) override;
+	// virtual std::any visitElseBody(ShellExprParser::ElseBodyContext *ctx) override;
 
 	// <------------------- while_clause ------------------>
 	virtual std::any visitWhileBody(ShellExprParser::WhileBodyContext *ctx) override;
