@@ -101,23 +101,53 @@ std::any shellVisitor::visitFunctionDef(ShellExprParser::FunctionDefContext *ctx
 {
 	// Read the name of the function
 	auto nameFunction = ctx->ID()->getText();
+
 	// Verify if the function exists
-	if (functions.find(nameFunction) != functions.end())
+	if (memory.find(nameFunction) != memory.end())
 	{
 		std::cout << "Function already exists..." << std::endl;
 		return std::any();
 	}
+	try
+	{
+		// Read args of the function in a vector
+		std::vector<std::string> Args;
+		if (ctx->function_args())
+			Args = std::any_cast<std::vector<std::string>>(visit(ctx->function_args()));
 
-	std::vector<std::string> functionArgs;
-	// Read args of the function in a vector
-	if (ctx->function_args())
-		functionArgs = std::any_cast<std::vector<std::string>>(visit(ctx->function_args()));
+		// Create the Function with IR LLVM
+		std::vector<llvm::Type *> Doubles(Args.size(),
+										  llvm::Type::getDoubleTy(*context));
+		llvm::FunctionType *FT = llvm::FunctionType::get(
+			llvm::Type::getDoubleTy(*context), Doubles, false);
 
-	// Create a Function instance
-	Function function;
-	function.args = functionArgs;
-	// Save the function in the map
-	functions[nameFunction] = function;
+		llvm::Function *F = llvm::Function::Create(
+			FT, llvm::Function::ExternalLinkage, nameFunction, module.get());
+
+		llvm::BasicBlock *BB = llvm::BasicBlock::Create(*context, "entry", F);
+		builder->SetInsertPoint(BB);
+		visit(ctx->compound_list());
+		builder->CreateRet(nullptr);
+		// Get a reference to the main function
+		llvm::Function *mainFunc = module->getFunction("main");
+
+		if (!mainFunc)
+		{
+			// Handle error: main function not found
+		}
+
+		// Get the entry block of the main function
+		llvm::BasicBlock &entry = mainFunc->getEntryBlock();
+
+		// Set the builder's insertion point to the entry block of main
+		builder->SetInsertPoint(&entry);
+	}
+	catch (const std::bad_any_cast &e)
+	{
+		// Handle other types an error
+		std::cout << "Unsupported type for function\n";
+	}
+	memory[nameFunction] = nameFunction;
 
 	return std::any();
 }
@@ -415,27 +445,14 @@ std::any shellVisitor::visitCallFunction(ShellExprParser::CallFunctionContext *c
 	// Read the name of the function
 	auto nameFunction = ctx->ID()->getText();
 
-	if (functions.find(nameFunction) == functions.end())
+	// Verify if the function exist
+	if (memory.find(nameFunction) == memory.end())
 	{
 		std::cout << "Function not found..." << std::endl;
 		return std::any();
 	}
-	std::vector<std::string> args;
-	if (ctx->function_args())
-		args = std::any_cast<std::vector<std::string>>(visit(ctx->function_args()));
 
-	// Read the function
-	auto function = functions[nameFunction];
-
-	// Show Function
-	std::cout << "Function: " << nameFunction << std::endl;
-	std::cout << "Args: " << function.args.size() << std::endl;
-	// Show args
-	for (auto arg : function.args)
-	{
-		std::cout << arg << std::endl;
-	}
-
+	IRFunctionCallBlock(nameFunction.c_str(), {});
 	return std::any();
 }
 // _____________________________________________________________________________
