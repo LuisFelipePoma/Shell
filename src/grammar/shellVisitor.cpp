@@ -1,19 +1,22 @@
 // Libraries from the system
 #include <any>
+#include <llvm-c/ExecutionEngine.h>
+#include <llvm/IR/DerivedTypes.h>
+#include <llvm/IR/Value.h>
 #include <memory>
 #include <string>
 #include <cstdio>
 #include <sys/wait.h>
+#include <iostream>
+#include <unistd.h>
 
 // Libraries from antlr4 files generated
 #include "libs/ShellExprLexer.h"
-#include "libs/ShellExprVisitor.h"
 #include "libs/ShellExprParser.h"
 #include "shellVisitor.h"
 
 // Utils
 #include "../utils/export.h"
-#include "../utils/echo.h"
 #include "../utils/handleCmd.h"
 
 // _____________________________________________________________________________
@@ -161,7 +164,11 @@ std::any shellVisitor::visitCmdArgs(ShellExprParser::CmdArgsContext *ctx)
 
 	// Execute the command of the system with his args*
 	std::string result = std::any_cast<std::string>(handleExecutionCmd(command + " " + args, isPipeline));
-
+	// if (command.substr(0, 3) == "cd ")
+	// {
+	// 	command = command.substr(3);
+	// 	executeCommandFunction = module->getFunction("chdir");
+	// }
 	return std::any(result);
 }
 
@@ -179,13 +186,21 @@ std::any shellVisitor::visitCmdArgs(ShellExprParser::CmdArgsContext *ctx)
 */
 std::any shellVisitor::visitCmd(ShellExprParser::CmdContext *ctx)
 {
-	// Read the command name
 	std::string command = ctx->cmd_name()->ID()->getText();
 
-	// Execute the command of the system without args
-	std::string result = std::any_cast<std::string>(handleExecutionCmd(command, isPipeline));
+	// Parse command and verify
+	if (isPipeline)
+		return command;
 
-	return std::any(result);
+	auto *executeCommandFunction = module->getFunction("system");
+
+	llvm::Value *commandValue = builder->CreateGlobalStringPtr(llvm::StringRef(command), "command");
+	std::vector<llvm::Value *>
+		args = {commandValue};
+
+	auto result = builder->CreateCall(executeCommandFunction, args);
+
+	return std::any();
 }
 
 // simple_command: | operation                         					# operationStmt
@@ -424,19 +439,18 @@ std::any shellVisitor::visitCallFunction(ShellExprParser::CallFunctionContext *c
 std::any shellVisitor::visitMulDivOpe(ShellExprParser::MulDivOpeContext *ctx)
 {
 	// Read the left and right part of the expression
-	auto left = std::any_cast<std::string>(visit(ctx->expr(0)));
-	auto right = std::any_cast<std::string>(visit(ctx->expr(1)));
+	auto left = std::any_cast<llvm::Value *>(visit(ctx->expr(0)));
+	auto right = std::any_cast<llvm::Value *>(visit(ctx->expr(1)));
 
 	// Verify the operation (only accepts numbers operations for now)
 	switch (ctx->opt->getType())
 	{
 	case ShellExprLexer::MUL:
-		return std::any(std::to_string(std::stoi(left) * std::stoi(right)));
+		return std::any(builder->CreateFMul(left, right, "mulTemp"));
 	case ShellExprLexer::DIV:
-		return std::any(std::to_string(std::stoi(left) / std::stoi(right)));
+		return std::any(builder->CreateFDiv(left, right, "divTemp"));
 	}
-
-	return std::any();
+	return std::any(nullptr);
 }
 
 // expr : | expr ('+'|'-') expr                  						# sumMinOpe
@@ -453,18 +467,18 @@ std::any shellVisitor::visitMulDivOpe(ShellExprParser::MulDivOpeContext *ctx)
 std::any shellVisitor::visitSumMinOpe(ShellExprParser::SumMinOpeContext *ctx)
 {
 	// Read the left and right part of the expression
-	auto left = std::any_cast<std::string>(visit(ctx->expr(0)));
-	auto right = std::any_cast<std::string>(visit(ctx->expr(1)));
+	auto left = std::any_cast<llvm::Value *>(visit(ctx->expr(0)));
+	auto right = std::any_cast<llvm::Value *>(visit(ctx->expr(1)));
 
 	// Verify the operation (only accepts numbers operations for now)
 	switch (ctx->opt->getType())
 	{
 	case ShellExprLexer::PLUS:
-		return std::any(std::to_string(std::stoi(left) + std::stoi(right)));
+		return std::any(builder->CreateFDiv(left, right, "addTemp"));
 	case ShellExprLexer::MINUS:
-		return std::any(std::to_string(std::stoi(left) - std::stoi(right)));
+		return std::any(builder->CreateFSub(left, right, "subTemp"));
 	}
-	return std::any();
+	return std::any(nullptr);
 }
 
 // expr : | expr ('<'|'>'|'>='|'<='| '==') expr   						# compOpe
@@ -481,26 +495,47 @@ std::any shellVisitor::visitSumMinOpe(ShellExprParser::SumMinOpeContext *ctx)
 std::any shellVisitor::visitCompOpe(ShellExprParser::CompOpeContext *ctx)
 {
 	// Read the left and right part of the expression
-	auto left = std::any_cast<std::string>(visit(ctx->expr(0)));
-	auto right = std::any_cast<std::string>(visit(ctx->expr(1)));
+	auto left = std::any_cast<llvm::Value *>(visit(ctx->expr(0)));
+	auto right = std::any_cast<llvm::Value *>(visit(ctx->expr(1)));
 
 	// Verify the operation (only accepts numbers operations for now)
 	switch (ctx->opt->getType())
 	{
 	case ShellExprLexer::LESS:
-		return std::any(std::to_string(std::stoi(left) < std::stoi(right)));
+		return std::any(builder->CreateFCmpULT(left, right, "lessTemp"));
 	case ShellExprLexer::GREAT:
-		return std::any(std::to_string(std::stoi(left) > std::stoi(right)));
+		return std::any(builder->CreateFCmpUGT(left, right, "greatTemp"));
 	case ShellExprLexer::LESS_EQ:
-		return std::any(std::to_string(std::stoi(left) <= std::stoi(right)));
+		return std::any(builder->CreateFCmpULE(left, right, "lessEqTemp"));
 	case ShellExprLexer::GREAT_EQ:
-		return std::any(std::to_string(std::stoi(left) >= std::stoi(right)));
+		return std::any(builder->CreateFCmpUGE(left, right, "greatEqTemp"));
 	case ShellExprLexer::NOT_EQ:
-		return std::any(std::to_string(std::stoi(left) != std::stoi(right)));
+		return std::any(builder->CreateFCmpUNE(left, right, "notEqTemp"));
 	case ShellExprLexer::EQUALS:
-		return std::any(std::to_string(std::stoi(left) == std::stoi(right)));
+		return std::any(builder->CreateFCmpUEQ(left, right, "equalTemp"));
 	}
-	return std::any();
+	return std::any(nullptr);
+}
+
+// expr : | NUMBER                   										# number
+/*
+	----
+	Base of a number
+	```antlr
+		expr : NUMBER                   									# number
+	```
+	Looks like this:
+		- `100`
+		- `-10.2`
+*/
+std::any shellVisitor::visitNumber(ShellExprParser::NumberContext *ctx)
+{
+	// Read the name of the variable
+	auto numVal = std::stod(ctx->NUMBER()->getText());
+
+	// If the variable doesn't exists, return the same name
+	llvm::Value *val = llvm::ConstantFP::get(*context, llvm::APFloat(numVal));
+	return std::any(val);
 }
 
 // expr : | ID                                    						# idStmt
@@ -517,15 +552,19 @@ std::any shellVisitor::visitCompOpe(ShellExprParser::CompOpeContext *ctx)
 std::any shellVisitor::visitIdStmt(ShellExprParser::IdStmtContext *ctx)
 {
 	// Read the name of the variable
-	std::string id = ctx->ID()->getText();
+	std::cout << "visitId\n";
+	std::string idName = ctx->ID()->getText();
+
+	llvm::AllocaInst *Alloca = CreateEntryBlockAlloca(idName);
 
 	// Verify if the variable exists
-	if (memory.find(id) != memory.end())
+	if (memory.find(idName) != memory.end())
 		// If the variable exists, return it
-		return memory[id];
+		return memory[idName];
 
 	// If the variable doesn't exists, return the same name
-	return std::any(id);
+	memory[idName] = Alloca;
+	return std::any(Alloca);
 }
 
 // expr : | LIST                                  						# listStmt
@@ -921,4 +960,46 @@ std::any shellVisitor::visitWhileBody(ShellExprParser::WhileBodyContext *ctx)
 		condition = std::any_cast<std::string>(visit(ctx->expr()));
 	}
 	return std::any();
+}
+
+// _____________________________________________________________________________
+// |	/	/	/	/	/	IMPLEMENTATION FUNCTIONS /	/	/	/	/	/	/	|
+// -----------------------------------------------------------------------------
+
+// Function to create the call to the system Function
+void shellVisitor::IRFunctionSysCall(const char *nameFunction, std::vector<llvm::Type *> argTy)
+{
+	std::vector<llvm::Type *> argTypes = argTy; // Argument type is char*
+
+	llvm::FunctionType *funcType = llvm::FunctionType::get(
+		llvm::Type::getInt32Ty(*context), // Return type is int
+		argTypes,						  // Argument types
+		false							  // Is vararg?
+	);
+
+	llvm::Function *func = llvm::Function::Create(
+		funcType,
+		llvm::Function::ExternalLinkage,
+		nameFunction, // Function name
+		module.get()  // Get the raw pointer
+	);
+}
+// Function to handle the execution of the commands
+void shellVisitor::generateMainIR()
+{
+	int8Type = llvm::Type::getInt8Ty(*context);
+	charPtrType = llvm::PointerType::get(int8Type, 0);
+
+	// Create the function call to "system" -> int system(char*)
+	IRFunctionSysCall("system", {charPtrType});
+	IRFunctionSysCall("chdir", {charPtrType});
+
+	// Create the main function ("main") -> double main()
+	std::vector<llvm::Type *> paramsType(0, llvm::Type::getDoubleTy(*context));
+	llvm::FunctionType *FT = llvm::FunctionType::get(
+		llvm::Type::getVoidTy(*context), paramsType, false);
+	F = llvm::Function::Create(
+		FT, llvm::Function::ExternalLinkage, "main", module.get());
+	builder->SetInsertPoint(
+		llvm::BasicBlock::Create(*context, "entry", F));
 }

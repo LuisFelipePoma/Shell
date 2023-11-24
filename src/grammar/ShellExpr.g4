@@ -48,8 +48,9 @@ operation
 expr
 	: expr opt=('*'|'/') expr                     							# mulDivOpe
     | expr opt=('+'|'-') expr                   							# sumMinOpe
-    | expr opt=('<'|'>'|'>='|'<='| '=='|'!=') expr   							# compOpe
-    | ID                                    								# idStmt
+    | expr opt=('<'|'>'|'>='|'<='| '=='|'!=') expr   						# compOpe
+    | NUMBER                   												# number
+	| ID                                    								# idStmt
     | LIST                                  								# listStmt
     ;
 
@@ -142,8 +143,8 @@ EQUALS		: '==';
 
 
 
-ID							: (ALPHANUMERIC_CHAR | DIGIT)+;
 NUMBER						: '-'? ( '.' DIGIT+ | DIGIT+ ( '.' DIGIT*)?);
+ID							: (ALPHANUMERIC_CHAR | DIGIT)+;
 
 fragment DIGIT				: [0-9];
 fragment LETTER				: [a-zA-Z];
