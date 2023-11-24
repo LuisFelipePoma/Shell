@@ -13,12 +13,16 @@
 #include <any>
 #include <cstdio>
 #include <iostream>
-#include <llvm-17/llvm/ADT/APInt.h>
+#include <llvm/ADT/APInt.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/IR/Metadata.h>
 #include <llvm/IR/Type.h>
 #include <llvm/IR/Value.h>
+#include <llvm/IR/LegacyPassManager.h>
+#include <llvm/Transforms/Scalar/GVN.h>
+#include <llvm/Transforms/Scalar.h>
 #include <llvm/Support/raw_ostream.h>
+#include <llvm/Transforms/InstCombine/InstCombine.h>
 #include <map>
 #include <memory>
 #include <string>
@@ -30,6 +34,7 @@
 #include <llvm/ExecutionEngine/MCJIT.h>
 #include <llvm/Support/TargetSelect.h>
 #include "llvm/Linker/Linker.h"
+#include "include/KaleidoscopeJIT.h"
 #include <unistd.h>
 #include <utility>
 
@@ -38,14 +43,10 @@ class shellVisitor : ShellExprBaseVisitor
 {
 public:
 	shellVisitor()
-		: context(std::make_unique<llvm::LLVMContext>()),
-		  module(std::make_unique<llvm::Module>("ShellWithLLVM", *context)),
-		  builder(std::make_unique<llvm::IRBuilder<>>(*context))
-
 	{
 		isPipeline = false;
 		isAndOr = false;
-
+		InitializeModuleAndPassManager();
 		generateMainIR();
 	}
 
@@ -153,9 +154,7 @@ public:
 	{
 		// Create new objects
 		// Reasign all Llvm structures (context,builder,module)
-		context = std::make_unique<llvm::LLVMContext>();
-		module = std::make_unique<llvm::Module>("my cool jit", *context);
-		builder = std::make_unique<llvm::IRBuilder<>>(*context);
+		InitializeModuleAndPassManager();
 
 		// Create the function call to "system" -> int system(char*)
 		generateMainIR();
@@ -199,6 +198,9 @@ public:
 	llvm::Value *getValueFromMemory(std::string id, std::string output_type);
 
 	llvm::Function *F; // aux
+
+	void InitializeModuleAndPassManager();
+
 private:
 	struct Function
 	{
@@ -218,16 +220,26 @@ private:
 		{PUTS, "puts"},
 	};
 
-	llvm::ExecutionEngine *engine;
+	// Flags for flow of the data
 	bool isAndOr;
 	bool isPipeline;
+
 	// Create a map to store variables
 	std::map<std::string, std::any> memory;
+
 	// Create a map to store functions
 	std::map<std::string, Function> functions;
 	std::unique_ptr<llvm::LLVMContext> context;
 	std::unique_ptr<llvm::Module> module;
 	std::unique_ptr<llvm::IRBuilder<>> builder;
+	llvm::ExecutionEngine *engine;
+
+	// Optimize the code
+	std::unique_ptr<llvm::FunctionPassManager> TheFPM;
+	std::unique_ptr<llvm::orc::KaleidoscopeJIT> TheJIT;
+	std::unique_ptr<llvm::FunctionAnalysisManager> TheFAM;
+	llvm::PassBuilder *PB;
+	llvm::ExitOnError ExitOnErr;
 
 	// Types
 	llvm::Type *int8Type;

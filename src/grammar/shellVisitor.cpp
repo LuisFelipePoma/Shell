@@ -7,6 +7,7 @@
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Instructions.h>
+#include <llvm/IR/Module.h>
 #include <llvm/IR/Type.h>
 #include <llvm/IR/Value.h>
 #include <memory>
@@ -121,20 +122,19 @@ std::any shellVisitor::visitFunctionDef(ShellExprParser::FunctionDefContext *ctx
 		llvm::FunctionType *FT = llvm::FunctionType::get(
 			llvm::Type::getDoubleTy(*context), Doubles, false);
 
-		llvm::Function *F = llvm::Function::Create(
+		llvm::Function *function = llvm::Function::Create(
 			FT, llvm::Function::ExternalLinkage, nameFunction, module.get());
 
 		llvm::BasicBlock *BB = llvm::BasicBlock::Create(*context, "entry", F);
 		builder->SetInsertPoint(BB);
 		visit(ctx->compound_list());
 		builder->CreateRet(nullptr);
+
+		// Optimize the function.
+		// TheFPM->run(*function, *TheFAM);
+
 		// Get a reference to the main function
 		llvm::Function *mainFunc = module->getFunction("main");
-
-		if (!mainFunc)
-		{
-			// Handle error: main function not found
-		}
 
 		// Get the entry block of the main function
 		llvm::BasicBlock &entry = mainFunc->getEntryBlock();
@@ -1210,4 +1210,33 @@ void shellVisitor::generateMainIR()
 		FT, llvm::Function::ExternalLinkage, "main", module.get());
 	builder->SetInsertPoint(
 		llvm::BasicBlock::Create(*context, "entry", F));
+}
+//===----------------------------------------------------------------------===//
+// Top-Level parsing and JIT Driver
+//===----------------------------------------------------------------------===//
+
+void shellVisitor::InitializeModuleAndPassManager()
+{
+	llvm::InitializeNativeTarget();
+	llvm::InitializeNativeTargetAsmPrinter();
+	llvm::InitializeNativeTargetAsmParser();
+
+	TheJIT = ExitOnErr(llvm::orc::KaleidoscopeJIT::Create());
+
+	// Open a new context and module.
+	context = std::make_unique<llvm::LLVMContext>();
+	module = std::make_unique<llvm::Module>("ShellWithLLVM", *context);
+	module->setDataLayout(TheJIT->getDataLayout());
+
+	// Create a new builder for the module.
+	builder = std::make_unique<llvm::IRBuilder<>>(*context);
+
+	// Create a new pass manager attached to it.
+	TheFPM = std::make_unique<llvm::FunctionPassManager>();
+	TheFAM = std::make_unique<llvm::FunctionAnalysisManager>();
+
+	TheFPM->addPass(llvm::InstCombinePass());
+	// Eliminate Common SubExpressions.
+	TheFPM->addPass(llvm::GVNPass());
+
 }
