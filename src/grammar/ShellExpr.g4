@@ -48,13 +48,14 @@ operation
 expr
 	: expr opt=('*'|'/') expr                     							# mulDivOpe
     | expr opt=('+'|'-') expr                   							# sumMinOpe
-    | expr opt=('<'|'>'|'>='|'<='| '=='|'!=') expr   							# compOpe
-    | ID                                    								# idStmt
+    | expr opt=('<'|'>'|'>='|'<='| '=='|'!=') expr   						# compOpe
+    | NUMBER                   												# number
+	| ID                                    								# idStmt
     | LIST                                  								# listStmt
     ;
 
 compound_list
-	: (command|and_or) (separator (command|and_or))* separator? 			# compoundListBody
+	: (command) (separator (command))* separator? 			# compoundListBody
 	;
 
 for_clause
@@ -142,8 +143,8 @@ EQUALS		: '==';
 
 
 
-ID							: (ALPHANUMERIC_CHAR | DIGIT)+;
 NUMBER						: '-'? ( '.' DIGIT+ | DIGIT+ ( '.' DIGIT*)?);
+ID							: (ALPHANUMERIC_CHAR | DIGIT)+;
 
 fragment DIGIT				: [0-9];
 fragment LETTER				: [a-zA-Z];
