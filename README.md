@@ -56,6 +56,7 @@ La generación de código intermedio fue realizada empleando `LLVM` interactuand
 
 <img src="./read/IR.png" alt="IR">
 
+<img src="./read/IRCode.png" alt="IRCode">
 
 ## Características Adicionales
 Como valor agregado, hemos implementado dos funcionalidades adicionales para mejorar la experiencia de usuario: autocompletado de archivos y personalización de colores. La primera, emplea la estructura de datos `Trie` para mejorar la complejidad algorítmica. Por otro lado, la personalización de colores se realiza a través del comando `!!`. Dichas implementaciones se encuentran en el `main.cpp` donde también se maneja el modo multilínea o también llamado headless, el cual se activa y finaliza ingresando el comando `**`.
