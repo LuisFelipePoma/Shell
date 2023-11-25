@@ -131,7 +131,7 @@ std::any shellVisitor::visitFunctionDef(ShellExprParser::FunctionDefContext *ctx
 		builder->CreateRet(nullptr);
 
 		// Optimize the function.
-		TheFPM->run(*function, *TheFAM);
+		// TheFPM->run(*function, *TheFAM);
 
 		// Get a reference to the main function
 		llvm::Function *mainFunc = module->getFunction("main");
