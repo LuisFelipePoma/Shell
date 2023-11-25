@@ -63,7 +63,7 @@ Como valor agregado, hemos implementado dos funcionalidades adicionales para mej
 //TODO
 
 ## Conclusiones
-Este proyecto nos ha permitido poner en práctica los conocimientos teóricos adquiridos durante el semestre académico y afianzar el uso de herramientas como `ANTLR4` y `LLVM`. No obstante, los logros no solo se centran en lo académico, sino también en el desarrollo de proyectos en grupo a través de comunicación efectiva y escucha activa.
+Este proyecto nos ha permitido poner en práctica los conocimientos teóricos adquiridos durante el semestre académico y afianzar el uso de herramientas como `ANTLR4` y `LLVM`. Además, hemos hecho uso de lo aprendido en cursos anteriores para optimizar el codigo a traves de estructuras de datos y pusimos en prioridad a la experiencia de usuario al implementar funcionalidades adicionales relevantes. No obstante, los logros no solo se centran en lo académico, sino también en el desarrollo de proyectos en grupo a través de comunicación efectiva y escucha activa. Entonces, se podria considerar este trabajo como un proyecto integral multidisciplinario como prueba tangible de nuestras habilidades.
 
 
 
