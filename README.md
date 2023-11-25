@@ -6,8 +6,8 @@
 	- [Introducción](#introducción)
 	- [Objetivos](#objetivos)
 	- [Analizador Léxico y Sintáctico](#analizador-léxico-y-sintáctico)
-	- [Visitores en `C++`](#visitores-en-c)
-	- [Generación de `IR` y optimización con `JIT`](#generación-de-ir-y-optimización-con-jit)
+	- [Visitores en **C++**](#visitores-en-c)
+	- [Generación de **IR** y optimización con **JIT**](#generación-de-ir-y-optimización-con-jit)
 	- [Características Adicionales](#características-adicionales)
 	- [Conclusiones](#conclusiones)
 	- [Configuration](#configuration)
@@ -36,7 +36,7 @@ El presente proyecto corresponde al trabajo final del curso de Teoría de Compil
 - Generación de código intermedio con LLVM y optimización de este a través de JIT
 - Implementar manejo de errores de entrada informativo que mejore la experiencia de interacción.
 - Desarrollar e implementar autocompletado de archivos para la mejora de la eficiencia en la interacción.
-- Permitir que el usuario personalice su shell a través de colores, mejorando la estética,
+- Permitir que el usuario personalice su shell a través de colores, mejorando la estética.
 
 ## Analizador Léxico y Sintáctico
 Para este apartado se ha utilizado `ANTLR4`. Para la generación de un lexer y un parser precisos, se definieron las restricciones necesarias y las funcionalidades a implementar en función de los requisitos del enunciado.
@@ -46,12 +46,12 @@ Para este apartado se ha utilizado `ANTLR4`. Para la generación de un lexer y u
 * Lexer
 <img src="./read/lexer.png" alt="lexer">
 
-## Visitores en `C++`
+## Visitores en **C++**
 Para poder ejecutar funciones especificas en cada nodo del `AST` utilizamos visitores en el lenguaje de programación `C++`. Estos nos permitieron implementar un sistema de manejo de errores informativo que mejora la experiencia de interacción.
 
 <img src="./read/visitors.png" alt="visitors">
 
-## Generación de `IR` y optimización con `JIT`
+## Generación de **IR** y optimización con **JIT**
 La generación de código intermedio fue realizada empleando `LLVM` interactuando con los visitores de `ANTLR4` y optimizamos utilizando `Just In Time`.
 
 <img src="./read/IR.png" alt="IR">
@@ -59,12 +59,14 @@ La generación de código intermedio fue realizada empleando `LLVM` interactuand
 <img src="./read/IRCode.png" alt="IRCode">
 
 ## Características Adicionales
-Como valor agregado, hemos implementado dos funcionalidades adicionales para mejorar la experiencia de usuario: autocompletado de archivos y personalización de colores. La primera, emplea la estructura de datos `Trie` para mejorar la complejidad algorítmica. Por otro lado, la personalización de colores se realiza a través del comando `!!`. Dichas implementaciones se encuentran en el `main.cpp` donde también se maneja el modo multilínea o también llamado headless, el cual se activa y finaliza ingresando el comando `**`.
+Como valor agregado, hemos implementado dos funcionalidades adicionales para mejorar la experiencia de usuario: autocompletado de archivos y personalización de colores. La primera emplea la estructura de datos `Trie` para mejorar la complejidad algorítmica. Por otro lado, la personalización de colores se realiza a través del comando `!!`. Dichas implementaciones se encuentran en el `main.cpp`, donde también se maneja el modo multilínea o también llamado headless, el cual se activa y finaliza ingresando el comando `**`.
 
-//TODO
+<div align=center>
+<img src="./read/demo.png" alt="demo">
+</div>
 
 ## Conclusiones
-Este proyecto nos ha permitido poner en práctica los conocimientos teóricos adquiridos durante el semestre académico y afianzar el uso de herramientas como `ANTLR4` y `LLVM`. Además, hemos hecho uso de lo aprendido en cursos anteriores para optimizar el codigo a traves de estructuras de datos y pusimos en prioridad a la experiencia de usuario al implementar funcionalidades adicionales relevantes. No obstante, los logros no solo se centran en lo académico, sino también en el desarrollo de proyectos en grupo a través de comunicación efectiva y escucha activa. Entonces, se podria considerar este trabajo como un proyecto integral multidisciplinario como prueba tangible de nuestras habilidades.
+Este proyecto nos ha permitido poner en práctica los conocimientos teóricos adquiridos durante el semestre académico y afianzar el uso de herramientas como `ANTLR4` y `LLVM`. Además, hemos hecho uso de lo aprendido en cursos anteriores para optimizar el código a través de estructuras de datos y pusimos en prioridad la experiencia de usuario al implementar funcionalidades adicionales relevantes. No obstante, los logros no solo se centran en lo académico, sino también en el desarrollo de proyectos en grupo a través de comunicación efectiva y escucha activa. Entonces, se podría considerar este trabajo como un proyecto integral multidisciplinario como prueba tangible de nuestras habilidades.
 
 
 
