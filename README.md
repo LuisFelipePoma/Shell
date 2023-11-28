@@ -204,4 +204,4 @@ Este proyecto nos ha permitido poner en práctica los conocimientos teóricos ad
 	```
 	> Also you can run the project with `F5` in vscode, with the config files `task.json` and `launch.json`
 
-> PoV siempre con Alegria.
+> cat
