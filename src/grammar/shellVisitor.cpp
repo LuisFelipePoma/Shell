@@ -7,6 +7,7 @@
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Instructions.h>
+
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Type.h>
 #include <llvm/IR/Value.h>
@@ -319,12 +320,12 @@ std::any shellVisitor::visitArgsBody(ShellExprParser::ArgsBodyContext *ctx)
 */
 std::any shellVisitor::visitAssing(ShellExprParser::AssingContext *ctx)
 {
+	std::cout << "visitAssing\n";
 	// Read the name of the variable
 	std::string assignation = ctx->ID()->getText();
 
 	// Read the value of the expression
 	std::string val = std::any_cast<std::string>(visit(ctx->expr()));
-
 	// Verify if the variable exists
 	if (memory.find(assignation) == memory.end())
 	{
@@ -388,6 +389,7 @@ std::any shellVisitor::visitExport(ShellExprParser::ExportContext *ctx)
 */
 std::any shellVisitor::visitDeclaration(ShellExprParser::DeclarationContext *ctx)
 {
+	std::cout << "visitDeclaration\n";
 	// Read the name of the variable
 	std::string id = ctx->ID()->getText();
 
@@ -400,9 +402,18 @@ std::any shellVisitor::visitDeclaration(ShellExprParser::DeclarationContext *ctx
 		// If the variable exists, throw an error (cannot create two variables equals)
 		std::cout << "Variable already exists..." << std::endl;
 	}
-	else
+	else{
 		// If the variable doesn't exists, create it
-		memory.insert(std::pair<std::string, std::any>(id, anyVal));
+		std::cout << "IDDeclaration: " << id << "\n";
+		llvm::Value *val = std::any_cast<llvm::Value *>(anyVal);
+		if (anyVal.type() == typeid(llvm::Value *))
+		{
+			std::cout << "Type8: " << anyVal.type().name() << "\n";
+			llvm::Value *val2 = std::any_cast<llvm::Value *>(anyVal);
+			val2->print(llvm::errs(), true);
+		}
+		memory.insert(std::pair<std::string, std::any>(id, std::any(val)));
+	}
 	return std::any();
 }
 
@@ -419,6 +430,7 @@ std::any shellVisitor::visitDeclaration(ShellExprParser::DeclarationContext *ctx
 */
 std::any shellVisitor::visitShow(ShellExprParser::ShowContext *ctx)
 {
+	std::cout << "visitShow\n";
 	// Read the name of the variable
 	std::string id = ctx->ID()->getText();
 
@@ -427,8 +439,11 @@ std::any shellVisitor::visitShow(ShellExprParser::ShowContext *ctx)
 	{
 		// 2. Create the format string and arguments
 		llvm::Value *valueV = getValueFromMemory(id, "str");
+		std::cout << "IDSHOW: " << id << "\n";
+		//valueV->print(llvm::errs(), true);
+		//std::cout << "\n";
 		// 3. Call the printf function
-		IRFunctionCallBlock(SysFunctionNames[SYS_FUNCTIONS::PUTS], {valueV});
+		//IRFunctionCallBlock(SysFunctionNames[SYS_FUNCTIONS::PUTS], {valueV});
 	}
 	else
 	{
@@ -482,10 +497,12 @@ std::any shellVisitor::visitMulDivOpe(ShellExprParser::MulDivOpeContext *ctx)
 	// Verify the operation (only accepts numbers operations for now)
 	switch (ctx->opt->getType())
 	{
-	case ShellExprLexer::MUL:
-		return std::any(builder->CreateFMul(leftV, rightV, "mulTemp"));
-	case ShellExprLexer::DIV:
-		return std::any(builder->CreateFDiv(leftV, rightV, "divTemp"));
+		// Multiply two floating numbers
+		case ShellExprLexer::MUL:
+			return std::any(builder->CreateFMul(leftV, rightV, "mulTemp"));
+		// Divide two floating numbers
+		case ShellExprLexer::DIV:
+			return std::any(builder->CreateFDiv(leftV, rightV, "divTemp"));
 	}
 	return std::any(nullptr);
 }
@@ -503,20 +520,28 @@ std::any shellVisitor::visitMulDivOpe(ShellExprParser::MulDivOpeContext *ctx)
 */
 std::any shellVisitor::visitSumMinOpe(ShellExprParser::SumMinOpeContext *ctx)
 {
+	std::cout << "visitSumMinOpe\n";
 	// Read the left and right part of the expression
-	auto left = visit(ctx->expr(0));
-	auto leftV = getValueAny(left, "any");
+	//auto left = visit(ctx->expr(0));
+	//auto leftV = getValueAny(left, "any");
 
-	auto right = visit(ctx->expr(1));
-	auto rightV = getValueAny(right, "any");
+	//auto right = visit(ctx->expr(1));
+	//auto rightV = getValueAny(right, "any");
 
+	llvm::Value *L = std::any_cast<llvm::Value *>(visit(ctx->expr(0)));
+	llvm::Value *R = std::any_cast<llvm::Value *>(visit(ctx->expr(1)));
+	std::cout << "LLEGAMOS: \n";
+	L->print(llvm::errs(), true);
+	std::cout << "\n";
+	R->print(llvm::errs(), true);
+	std::cout << "\n";
 	// Verify the operation (only accepts numbers operations for now)
 	switch (ctx->opt->getType())
 	{
-	case ShellExprLexer::PLUS:
-		return std::any(builder->CreateFDiv(leftV, rightV, "addTemp"));
-	case ShellExprLexer::MINUS:
-		return std::any(builder->CreateFSub(leftV, rightV, "subTemp"));
+		case ShellExprLexer::PLUS:
+			return std::any(builder->CreateFAdd(L, R, "addTemp"));
+		case ShellExprLexer::MINUS:
+			return std::any(builder->CreateFSub(L, R, "subTemp"));
 	}
 	return std::any(nullptr);
 }
@@ -574,11 +599,16 @@ std::any shellVisitor::visitCompOpe(ShellExprParser::CompOpeContext *ctx)
 */
 std::any shellVisitor::visitNumber(ShellExprParser::NumberContext *ctx)
 {
-	// Read the name of the variable
+	std::cout << "visitNumber\n";
+	// Read the number as a string and convert it to double
 	auto numVal = std::stod(ctx->NUMBER()->getText());
+	
+	llvm::Value *val = llvm::ConstantFP::get(*context, llvm::APFloat(numVal));
 
-	// If the variable doesn't exists, return the same name
-	return std::any(numVal);
+	val->print(llvm::errs(), true);
+	std::cout<<"\n";
+	// Return the value
+	return std::any(val);
 }
 
 // expr : | ID                                    						# idStmt
@@ -600,7 +630,7 @@ std::any shellVisitor::visitIdStmt(ShellExprParser::IdStmtContext *ctx)
 	// Verify if the variable exists
 	if (memory.find(idName) != memory.end())
 		// If the variable exists, return it
-		return memory[idName];
+		return std::any(memory[idName]);
 
 	// If the variable doesn't exists, return the same name
 	return std::any(idName);
@@ -1172,6 +1202,12 @@ llvm::Value *shellVisitor::getValueAny(std::any valueAny, std::string output_typ
 		arrayVar->setInitializer(constantArray);
 		return arrayVar;
 	}
+	/*else if (anyVal.type() == typeid(llvm::Value *))
+	{
+		llvm::Value *val = std::any_cast<llvm::Value *>(anyVal);
+		val->print(llvm::errs(), true);
+		std::cout << "\n";
+	}*/
 	else
 	{
 		// Handle other types
@@ -1183,7 +1219,16 @@ llvm::Value *shellVisitor::getValueAny(std::any valueAny, std::string output_typ
 // Get the Value from the memory to LLVM VAlue
 llvm::Value *shellVisitor::getValueFromMemory(std::string id, std::string output_type = "any")
 {
-	std::any valueAny = memory.at(id);
+	std::cout << "getValueFromMemory\n";
+	std::any valueAny = memory[id];
+
+	if (valueAny.type() == typeid(llvm::Value *))
+	{
+		std::cout << "Type3: " << valueAny.type().name() << "\n";
+		llvm::Value *val = std::any_cast<llvm::Value *>(valueAny);
+		val->print(llvm::errs(), true);
+		std::cout << "Type5: " << valueAny.type().name() << "\n";
+	}
 	llvm::Value *valueV = getValueAny(valueAny, output_type);
 	return valueV;
 }
@@ -1238,5 +1283,4 @@ void shellVisitor::InitializeModuleAndPassManager()
 	TheFPM->addPass(llvm::InstCombinePass());
 	// Eliminate Common SubExpressions.
 	TheFPM->addPass(llvm::GVNPass());
-
 }
