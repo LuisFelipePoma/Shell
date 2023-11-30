@@ -92,7 +92,7 @@ public:
 	virtual std::any visitListStmt(ShellExprParser::ListStmtContext *ctx) override;
 
 	// <------------------- compound_list ----------------->
-	// virtual std::any visitCompoundListBody(ShellExprParser::CompoundListBodyContext *ctx) override;
+	virtual std::any visitCompoundListBody(ShellExprParser::CompoundListBodyContext *ctx) override;
 
 	// <------------------- for_clause -------------------->
 	virtual std::any visitForBody(ShellExprParser::ForBodyContext *ctx) override;
@@ -132,10 +132,9 @@ public:
 		llvm::raw_fd_stream outLL("test.ll", error);
 		module->print(outLL, nullptr);
 		llvm::Module *M = module.get();
-
+		
 		std::string errStr;
-		llvm::ExecutionEngine *EE =
-			llvm::EngineBuilder(std::move(module))
+		llvm::ExecutionEngine *EE = llvm::EngineBuilder(std::move(module))
 				.setErrorStr(&errStr)
 				.create();
 		if (!EE)
@@ -143,7 +142,7 @@ public:
 			llvm::errs() << ": Failed to construct ExecutionEngine: " << errStr
 						 << "\n";
 		}
-		auto *executeCommandFunction = M->getFunction("main");
+		llvm::Function *executeCommandFunction = M->getFunction("main");
 
 		auto var = EE->runFunction(executeCommandFunction, {});
 		reloadIR();
@@ -159,8 +158,15 @@ public:
 		// Create the function call to "system" -> int system(char*)
 		generateMainIR();
 	}
+    void goToMain() {
 
-	// ------------------- METHODS TO LLVM GENERATION CODE --------------------------
+      llvm::Function *mainFunc = module->getFunction("main");
+      // Get the entry block of the main function
+      llvm::BasicBlock &entry = mainFunc->getEntryBlock();
+      // Set the builder's insertion point to the entry block of main
+      builder->SetInsertPoint(&entry);
+    }
+        // ------------------- METHODS TO LLVM GENERATION CODE --------------------------
 
 	// Generate Code IR Initial
 	void generateMainIR();
