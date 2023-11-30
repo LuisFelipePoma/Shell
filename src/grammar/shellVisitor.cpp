@@ -217,11 +217,11 @@ std::any shellVisitor::visitCmdArgs(ShellExprParser::CmdArgsContext *ctx)
 
 	// Create the args value
 	llvm::Value *commandValue = CreateStringPtr(completeCommand);
-
+	//llvm::Function *executeCommandFunction = module->getFunction(SysFunctionNames[SYS_FUNCTIONS::SYSTEM]);
 	// Create the CAll to the command of the system on the IR Code
-	IRFunctionCallBlock(SysFunctionNames[SYS_FUNCTIONS::SYSTEM], {commandValue});
+	//IRFunctionCallBlock(SysFunctionNames[SYS_FUNCTIONS::SYSTEM], {commandValue});
 
-	return std::any(nullptr);
+	return std::any(builder->CreateCall(executeCommandFunction, {commandValue}, "calltmp"));
 }
 
 // simple_command: | cmd_name											# cmd
