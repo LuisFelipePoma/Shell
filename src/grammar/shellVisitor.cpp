@@ -2,6 +2,7 @@
 #include <any>
 #include <cstddef>
 #include <llvm-17/llvm/IR/DerivedTypes.h>
+#include <llvm-17/llvm/Support/raw_ostream.h>
 #include <llvm-c/ExecutionEngine.h>
 #include <llvm/ADT/APInt.h>
 #include <llvm/IR/BasicBlock.h>
@@ -64,8 +65,8 @@ std::any shellVisitor::visitStart(ShellExprParser::StartContext *ctx)
 std::any shellVisitor::visitSimpleStmt(ShellExprParser::SimpleStmtContext *ctx)
 {
 	// Visit the children
-	visitChildren(ctx);
-	return std::any();
+	return visitChildren(ctx);
+	//return std::any();
 }
 
 // command :| compound_command 							# compoundStmt
@@ -235,6 +236,7 @@ std::any shellVisitor::visitCmdArgs(ShellExprParser::CmdArgsContext *ctx)
 		- `pwd`
 		- `etc`
 */
+
 std::any shellVisitor::visitCmd(ShellExprParser::CmdContext *ctx)
 {
 	std::string command = ctx->cmd_name()->ID()->getText();
@@ -247,9 +249,8 @@ std::any shellVisitor::visitCmd(ShellExprParser::CmdContext *ctx)
 	llvm::Value *commandValue = CreateStringPtr(command);
 
 	// Create the CAll to the command of the system on the IR Code
-	IRFunctionCallBlock(SysFunctionNames[SYS_FUNCTIONS::SYSTEM], {commandValue});
-
-	return std::any(command);
+	llvm::Function *executeCommandFunction = module->getFunction(SysFunctionNames[SYS_FUNCTIONS::SYSTEM]);
+	return std::any(builder->CreateCall(executeCommandFunction, {commandValue}, "calltmp"));
 }
 
 // simple_command: | operation                         					# operationStmt
@@ -657,12 +658,11 @@ std::any shellVisitor::visitListStmt(ShellExprParser::ListStmtContext *ctx)
 		compound_list: (command|and_or) (separator (command|and_or))* separator? # compoundListBody
 	```
 */
-// std::any shellVisitor::visitCompoundListBody(ShellExprParser::CompoundListBodyContext *ctx)
-// {
-// // Iterate over the children in order
-// 	visitChildren(ctx);
-// 	return std::any();
-// }
+std::any shellVisitor::visitCompoundListBody(ShellExprParser::CompoundListBodyContext *ctx)
+{
+	// Iterate over the children in order
+	return std::any(visitChildren(ctx));
+}
 
 // _____________________________________________________________________________
 // |							  for_clause									|
@@ -880,6 +880,7 @@ std::any shellVisitor::visitIfElseBody(ShellExprParser::IfElseBodyContext *ctx)
 {
 
 	llvm::Value *condition = std::any_cast<llvm::Value *>(visit(ctx->expr()));
+	// Cast llvm::Value condition to any
 
 	llvm::Function *TheFunction = builder->GetInsertBlock()->getParent();
 	// Create blocks for the then and else cases.  Insert the 'then' block at the
@@ -893,28 +894,36 @@ std::any shellVisitor::visitIfElseBody(ShellExprParser::IfElseBodyContext *ctx)
 
 	// Emit then value.
 	builder->SetInsertPoint(doBlock);
-	visit(ctx->compound_list());
-	builder->CreateBr(mergeBlock);
+    std::any ThenV = visit(ctx->compound_list());
+    llvm::CallInst *calltmp = std::any_cast<llvm::CallInst *>(ThenV);
 
-	// Codegen of 'Then' can change the current block, update ThenBB for the PHI.
-	doBlock = builder->GetInsertBlock();
+    builder->CreateBr(mergeBlock);
 
-	// Emit else block.
-	TheFunction->insert(TheFunction->end(), elseBlock);
-	builder->SetInsertPoint(elseBlock);
+    // Codegen of 'Then' can change the current block, update ThenBB for the PHI.
+    doBlock = builder->GetInsertBlock();
 
-	// llvm::Value *elseV = std::any_cast<llvm::Value *>(visit(ctx->else_part()));
-	visit(ctx->else_part());
+    // Emit else block.
+    TheFunction->insert(TheFunction->end(), elseBlock);
+    builder->SetInsertPoint(elseBlock);
 
-	builder->CreateBr(mergeBlock);
-	// Codegen of 'Else' can change the current block, update ElseBB for the PHI.
-	elseBlock = builder->GetInsertBlock();
+    std::any ElseV = visit(ctx->else_part());
+    llvm::CallInst *calltmp1 = std::any_cast<llvm::CallInst *>(ElseV);
 
-	// Emit merge block.
-	TheFunction->insert(TheFunction->end(), mergeBlock);
-	builder->SetInsertPoint(mergeBlock);
+    builder->CreateBr(mergeBlock);
+    // Codegen of 'Else' can change the current block, update ElseBB for the PHI.
+    elseBlock = builder->GetInsertBlock();
 
-	return std::any(nullptr);
+    // Emit merge block.
+    TheFunction->insert(TheFunction->end(), mergeBlock);
+    builder->SetInsertPoint(mergeBlock);
+
+    llvm::PHINode *PN = builder->CreatePHI(calltmp->getType(), 2, "iftmp");
+
+    PN->addIncoming(calltmp, doBlock);
+    PN->addIncoming(calltmp1, elseBlock);
+    builder->CreateRet(PN);
+	//goToMain();
+    return std::any(nullptr);
 }
 
 // if_clause: | IF expr do_group                              			# ifBody
@@ -1202,11 +1211,10 @@ void shellVisitor::generateMainIR()
 	IRFunctionSysDecl("puts", {charPtrType}, false);
 	// IRFunctionPrintf();
 	// Create the main function ("main") -> double main()
-	std::vector<llvm::Type *>
-		paramsType(0, llvm::Type::getDoubleTy(*context));
-	llvm::FunctionType *FT = llvm::FunctionType::get(
-		llvm::Type::getVoidTy(*context), paramsType, false);
-	F = llvm::Function::Create(
+	std::vector<llvm::Type *> paramsType(0, llvm::Type::getDoubleTy(*context));
+        llvm::FunctionType *FT = llvm::FunctionType::get(
+            llvm::Type::getInt32Ty(*context), paramsType, false);
+        F = llvm::Function::Create(
 		FT, llvm::Function::ExternalLinkage, "main", module.get());
 	builder->SetInsertPoint(
 		llvm::BasicBlock::Create(*context, "entry", F));
