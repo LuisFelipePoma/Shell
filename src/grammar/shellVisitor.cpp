@@ -680,8 +680,31 @@ std::any shellVisitor::visitCompoundListBody(ShellExprParser::CompoundListBodyCo
 */
 std::any shellVisitor::visitForBody(ShellExprParser::ForBodyContext *ctx)
 {
-	// Read the name of the variable to iter
-	auto iter_element = ctx->ID()->getText();
+	// Obtain the value of the variable
+	std::any val = visit(ctx->ID());
+	const std::type_info& typeInfo = val.type();
+	std::cout << typeInfo.name() << std::endl;
+
+	llvm::Value * StartVal = std::any_cast<llvm::Value*>(val);
+
+	llvm::Function *TheFunction = builder->GetInsertBlock()->getParent();
+	llvm::BasicBlock *PreHeaderBB = builder->GetInsertBlock();
+
+	llvm::BasicBlock *LoopBB = llvm::BasicBlock::Create(*context, "loop", TheFunction);
+
+	// Insert an explicit fall through from the current block to the LoopBB.
+	builder->CreateBr( LoopBB);
+
+	// Start insertion in LoopBB.
+	builder->SetInsertPoint(LoopBB);
+
+	// Start the PHI node with an entry for Start.
+	llvm::PHINode *Variable = builder->CreatePHI(llvm::Type::getDoubleTy(*context), 2, "looptmp");
+	
+	Variable->addIncoming(StartVal, PreHeaderBB);
+
+
+	/* auto iter_element = ctx->ID()->getText();
 
 	// Read the iterable
 	auto iterable = visit(ctx->expr());
@@ -736,7 +759,7 @@ std::any shellVisitor::visitForBody(ShellExprParser::ForBodyContext *ctx)
 		// Handle other types as error
 		std::cout << "Unsupported type for 'for'\n";
 		return std::any();
-	}
+	} */
 
 	return std::any();
 }
